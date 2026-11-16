@@ -154,12 +154,12 @@ function parseCommand(text) {
   if (!rest) return { target: "auto", prefixWords: 0 };
   const words = rest.split(/\s+/u);
   let candidate = words[0], prefixWords = 1;
-  if (candidate === "إلى" || candidate === "الى") { candidate = words[1] || ""; prefixWords = 2; }
-  candidate = candidate.replace(/^(?:لل|لـ|ل)/u, "").toLowerCase();
+  if (/^(?:إلى|الى)$/.test(candidate)) { candidate = words[1] || ""; prefixWords = 2; }
+  candidate = candidate.normalize("NFC").replace(/[\u064B-\u065F\u0670]/g, "").replace(/^(?:لل|لـ|ل)/u, "").toLowerCase();
   const languages = {
     "العربية":"ar","عربية":"ar","عربي":"ar","arabic":"ar","ar":"ar",
-    "الإنجليزية":"en","إنجليزية":"en","انجليزية":"en","إنجليزي":"en","انجليزي":"en","english":"en","en":"en",
-    "الفرنسية":"fr","فرنسية":"fr","فرنسي":"fr","french":"fr","fr":"fr",
+    "الإنجليزية":"en","إنجليزية":"en","انجليزية":"en","إنجليزي":"en","انجليزي":"en","انجليزيه":"en","english":"en","en":"en",
+    "الفرنسية":"fr","فرنسية":"fr","فرنسي":"fr","فرنسيه":"fr","french":"fr","fr":"fr",
     "الألمانية":"de","ألمانية":"de","الالمانية":"de","ألماني":"de","german":"de","de":"de",
     "الإسبانية":"es","إسبانية":"es","الاسبانية":"es","إسباني":"es","spanish":"es","es":"es",
     "التركية":"tr","تركية":"tr","تركي":"tr","turkish":"tr","tr":"tr",
@@ -206,7 +206,8 @@ function splitUtf8(text, maxBytes = 430) {
 async function translateText(text, requestedTarget, env, userId) {
   const containsArabicText = containsArabic(text);
   const detectedSource = detectSourceCode(text);
-  const source = containsArabicText ? "arabic" : "auto";
+  // Google, LibreTranslate and MyMemory expect ISO language codes (ar), not names (arabic).
+  const source = containsArabicText ? "ar" : "auto";
   const savedLanguage = requestedTarget === "auto" ? await getUserLanguage(env, userId) : null;
   const targetCode = requestedTarget === "auto" ? (savedLanguage || (containsArabicText ? "en" : "ar")) : requestedTarget;
   const languageNames = {
@@ -218,16 +219,29 @@ async function translateText(text, requestedTarget, env, userId) {
   const translated = [];
   for (const chunk of splitUtf8(text, 1100)) {
     if (env.GEMINI_API_KEY) {
-      try { translated.push(await translateWithGemini(chunk, target, targetCode, env)); continue; }
-      catch (error) { console.error("Gemini failed; fallback:", error?.message || error); }
+      try {
+        const candidate = await translateWithGemini(chunk, target, targetCode, env);
+        assertTranslationLooksValid(chunk, candidate, targetCode);
+        translated.push(candidate);
+        continue;
+      } catch (error) { console.error("Gemini failed validation or request; fallback:", error?.message || error); }
     }
     const failures = [];
-    try { translated.push(await translateWithGoogle(chunk, source, targetCode)); continue; }
-    catch (error) { failures.push("Google: " + (error?.message || error)); }
-    try { translated.push(await translateWithLibreTranslate(chunk, source, targetCode)); continue; }
-    catch (error) { failures.push("LibreTranslate: " + (error?.message || error)); }
-    try { translated.push(await translateWithMyMemory(chunk, source, targetCode, env)); continue; }
-    catch (error) { failures.push("MyMemory: " + (error?.message || error)); }
+    try {
+      const candidate = await translateWithGoogle(chunk, source, targetCode);
+      assertTranslationLooksValid(chunk, candidate, targetCode);
+      translated.push(candidate); continue;
+    } catch (error) { failures.push("Google: " + (error?.message || error)); }
+    try {
+      const candidate = await translateWithLibreTranslate(chunk, source, targetCode);
+      assertTranslationLooksValid(chunk, candidate, targetCode);
+      translated.push(candidate); continue;
+    } catch (error) { failures.push("LibreTranslate: " + (error?.message || error)); }
+    try {
+      const candidate = await translateWithMyMemory(chunk, source, targetCode, env);
+      assertTranslationLooksValid(chunk, candidate, targetCode);
+      translated.push(candidate); continue;
+    } catch (error) { failures.push("MyMemory: " + (error?.message || error)); }
     if (env.AI) {
       try { translated.push(await translateWithCloudflareAI(chunk, detectedSource, target, env)); continue; }
       catch (error) { failures.push("Cloudflare AI: " + (error?.message || error)); }
@@ -236,6 +250,24 @@ async function translateText(text, requestedTarget, env, userId) {
   }
   return translated.join("\n");
 }
+function assertTranslationLooksValid(sourceText, translatedText, targetCode) {
+  const result = String(translatedText || "").trim();
+  if (!result) throw new Error("Translation result is empty");
+  const sourceHasArabic = containsArabic(sourceText);
+  const arabicCount = (result.match(/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/gu) || []).length;
+  const letterCount = (result.match(/[\p{L}]/gu) || []).length || 1;
+  if (targetCode === "ar" && !sourceHasArabic && arabicCount === 0) {
+    throw new Error("Translation validation failed: Arabic output was expected");
+  }
+  if (targetCode !== "ar" && sourceHasArabic && arabicCount / letterCount > 0.25) {
+    throw new Error("Translation validation failed: result appears to remain in Arabic");
+  }
+  if (result === sourceText.trim() && targetCode !== "auto") {
+    throw new Error("Translation validation failed: unchanged source text");
+  }
+  return result;
+}
+
 async function translateImageWithGemini(message, requestedTarget, env, userId) {
   const best = message.photo[message.photo.length - 1];
   const fileInfo = await telegramCall(env, "getFile", { file_id: best.file_id });
