@@ -344,17 +344,20 @@ function prepareEngineGlossary(sourceText, targetCode) {
   const entries = [
     ["صباح الخير كيف حالك", "Bonjour, comment vas-tu ?"],
     ["هل أنت بخير", "Tu vas bien ?"],
+    ["هل انت بخير", "Tu vas bien ?"],
     ["كيف حالك اليوم", "Comment vas-tu aujourd'hui ?"],
     ["كيف حالك", "Comment vas-tu ?"],
     ["لم أجدك في العمل اليوم", "Je ne t'ai pas vu au travail aujourd'hui"],
+    ["لم اجدك في العمل اليوم", "Je ne t'ai pas vu au travail aujourd'hui"],
     ["لم أرك في العمل اليوم", "Je ne t'ai pas vu au travail aujourd'hui"],
+    ["لم ارك في العمل اليوم", "Je ne t'ai pas vu au travail aujourd'hui"],
     ["لم أتمكن من الحضور أمس", "Je n'ai pas pu venir hier"],
     ["لم أستطع الذهاب إلى العمل اليوم", "Je n'ai pas pu aller au travail aujourd'hui"],
     ["أنا اسمي", "Je m'appelle"],
     ["اسمي", "Je m'appelle"],
     ["محل عطور", "un magasin de parfums"],
-    ["ظروف العمل", "des obligations professionnelles"],
     ["بسبب ظروف العمل", "en raison de mes obligations professionnelles"],
+    ["ظروف العمل", "des obligations professionnelles"],
     ["صباح الخير", "Bonjour"],
     ["مساء الخير", "Bonsoir"],
     ["شكرا لك", "Merci"],
@@ -382,11 +385,10 @@ function prepareEngineGlossary(sourceText, targetCode) {
     restore(value) {
       let result = String(value || "");
       for (const [token, french] of replacements) {
-        result = result.split(token).join(french);
-      }
-      // Recover tokens if a provider changes their casing.
-      for (const [token, french] of replacements) {
         const loose = new RegExp(token, "gi");
+        if (!loose.test(result)) {
+          throw new Error("Translation engine altered a protected glossary token");
+        }
         result = result.replace(loose, french);
       }
       return result;
