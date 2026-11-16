@@ -152,29 +152,49 @@ function splitUtf8(text, maxBytes = 430) {
 }
 
 async function translateText(text, requestedTarget, env) {
-  const source = containsArabic(text) ? "ar" : "auto";
-  const target = requestedTarget === "auto" ? (source === "ar" ? "en" : "ar") : requestedTarget;
-  const chunks = splitUtf8(text);
+  const source = containsArabic(text) ? "arabic" : "english";
+  const targetCode = requestedTarget === "auto"
+    ? (source === "arabic" ? "en" : "ar")
+    : requestedTarget;
+  const languageNames = {
+    ar: "arabic", en: "english", fr: "french", de: "german",
+    es: "spanish", tr: "turkish", ru: "russian", it: "italian",
+    ja: "japanese", "zh-CN": "chinese", pt: "portuguese", hi: "hindi",
+    nl: "dutch", pl: "polish", ko: "korean", sv: "swedish",
+    uk: "ukrainian", fa: "persian", ur: "urdu", id: "indonesian",
+    vi: "vietnamese", th: "thai", he: "hebrew", bn: "bengali"
+  };
+  const target = languageNames[targetCode] || targetCode;
+  const chunks = splitUtf8(text, 1100);
   const translated = [];
 
   for (const chunk of chunks) {
+    if (env.AI) {
+      try {
+        translated.push(await translateWithCloudflareAI(chunk, source, target, env));
+        continue;
+      } catch (error) {
+        console.error("Cloudflare AI translation failed:", error?.message || error);
+      }
+    }
+
     const failures = [];
     try {
-      translated.push(await translateWithGoogle(chunk, source, target));
+      translated.push(await translateWithGoogle(chunk, source === "arabic" ? "ar" : "auto", targetCode));
       continue;
     } catch (error) {
       failures.push("Google: " + (error?.message || error));
       console.error("Google translation failed:", error?.message || error);
     }
     try {
-      translated.push(await translateWithLibreTranslate(chunk, source, target));
+      translated.push(await translateWithLibreTranslate(chunk, source === "arabic" ? "ar" : "auto", targetCode));
       continue;
     } catch (error) {
       failures.push("LibreTranslate: " + (error?.message || error));
       console.error("LibreTranslate failed:", error?.message || error);
     }
     try {
-      translated.push(await translateWithMyMemory(chunk, source, target, env));
+      translated.push(await translateWithMyMemory(chunk, source === "arabic" ? "ar" : "auto", targetCode, env));
       continue;
     } catch (error) {
       failures.push("MyMemory: " + (error?.message || error));
@@ -183,6 +203,19 @@ async function translateText(text, requestedTarget, env) {
     throw new Error("All translation providers failed. " + failures.join(" | "));
   }
   return translated.join("\n");
+}
+
+async function translateWithCloudflareAI(text, source, target, env) {
+  const result = await env.AI.run("@cf/meta/m2m100-1.2b", {
+    text,
+    source_lang: source,
+    target_lang: target
+  });
+  const translated = result?.translated_text || result?.translation || "";
+  if (typeof translated !== "string" || !translated.trim()) {
+    throw new Error("Cloudflare AI returned an empty translation");
+  }
+  return translated.trim();
 }
 
 async function translateWithGoogle(text, source, target) {
