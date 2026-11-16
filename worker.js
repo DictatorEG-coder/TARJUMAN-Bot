@@ -88,18 +88,18 @@ function parseCommand(text) {
 
   const destination = rest.replace(/^(?:إلى|الى|لل|لـ|ل)\s*/u, "").trim().toLowerCase();
   const languages = {
-    "العربية":"ar", "عربي":"ar", "arabic":"ar", "ar":"ar",
-    "الإنجليزية":"en", "انجليزية":"en", "إنجليزي":"en", "انجليزي":"en", "english":"en", "en":"en",
-    "الفرنسية":"fr", "فرنسي":"fr", "french":"fr", "fr":"fr",
-    "الألمانية":"de", "الالمانية":"de", "ألماني":"de", "german":"de", "de":"de",
-    "الإسبانية":"es", "الاسبانية":"es", "إسباني":"es", "spanish":"es", "es":"es",
-    "التركية":"tr", "تركي":"tr", "turkish":"tr", "tr":"tr",
-    "الروسية":"ru", "روسي":"ru", "russian":"ru", "ru":"ru",
-    "الإيطالية":"it", "الايطالية":"it", "إيطالي":"it", "italian":"it", "it":"it",
-    "اليابانية":"ja", "ياباني":"ja", "japanese":"ja", "ja":"ja",
-    "الصينية":"zh-CN", "صيني":"zh-CN", "chinese":"zh-CN",
-    "البرتغالية":"pt", "portuguese":"pt", "pt":"pt",
-    "الهندية":"hi", "هندي":"hi", "hindi":"hi", "hi":"hi"
+    "العربية":"ar", "عربية":"ar", "عربي":"ar", "arabic":"ar", "ar":"ar",
+    "الإنجليزية":"en", "إنجليزية":"en", "انجليزية":"en", "إنجليزي":"en", "انجليزي":"en", "english":"en", "en":"en",
+    "الفرنسية":"fr", "فرنسية":"fr", "فرنسي":"fr", "french":"fr", "fr":"fr",
+    "الألمانية":"de", "ألمانية":"de", "الالمانية":"de", "ألماني":"de", "german":"de", "de":"de",
+    "الإسبانية":"es", "إسبانية":"es", "الاسبانية":"es", "إسباني":"es", "spanish":"es", "es":"es",
+    "التركية":"tr", "تركية":"tr", "تركي":"tr", "turkish":"tr", "tr":"tr",
+    "الروسية":"ru", "روسية":"ru", "روسي":"ru", "russian":"ru", "ru":"ru",
+    "الإيطالية":"it", "إيطالية":"it", "الايطالية":"it", "إيطالي":"it", "italian":"it", "it":"it",
+    "اليابانية":"ja", "يابانية":"ja", "ياباني":"ja", "japanese":"ja", "ja":"ja",
+    "الصينية":"zh-CN", "صينية":"zh-CN", "صيني":"zh-CN", "chinese":"zh-CN",
+    "البرتغالية":"pt", "برتغالية":"pt", "portuguese":"pt", "pt":"pt",
+    "الهندية":"hi", "هندية":"hi", "هندي":"hi", "hindi":"hi", "hi":"hi"
   };
   if (languages[destination]) return { target: languages[destination] };
   if (/^[a-z]{2}(?:-[A-Z]{2})?$/.test(destination)) return { target: destination };
