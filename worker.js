@@ -59,19 +59,45 @@ export default {
 async function handleMessage(message, env) {
   const commandText = (message.text || message.caption || "").trim();
 
+  if (/^\/start(?:@\w+)?(?:\s|$)/i.test(commandText)) {
+    const firstName = (message.from?.first_name || "صديقي").replace(/[<>]/g, "").slice(0, 60);
+    const savedLanguage = await getUserLanguage(env, message.from?.id);
+    const welcome =
+      "مرحبًا " + firstName + "، أهلًا بك في ترجمان | TARJUMAN BOT 🌐\n\n" +
+      "ترجمان يساعدك على فهم النصوص بلغتك، ويترجم النصوص الموجودة داخل الصور أيضًا.\n\n" +
+      "📌 طريقة الاستخدام:\n" +
+      "• للترجمة: اكتب «ترجم» ردًا على أي رسالة.\n" +
+      "• أو اكتب «ترجم» ثم النص الذي تريد ترجمته.\n" +
+      "• يمكنك استخدام صيغ مثل: «ترج» أو «ترجمان» أو «ترجملي».\n" +
+      "• لتحديد لغة مباشرة: «ترجم للفرنسية» أو «ترجم للإنجليزية».\n" +
+      "• لترجمة صورة: أرسل «ترجم» ردًا على الصورة.\n\n" +
+      "🌐 اللغة الافتراضية: العربية إلى الإنجليزية، واللغات الأخرى إلى العربية." +
+      (savedLanguage ? "\n⚙️ لغتك المختارة حاليًا: " + languageLabel(savedLanguage) : "") +
+      "\n\nاستخدم الأزرار بالأسفل لاختيار لغة الترجمة أو معرفة المزيد.";
+    await sendMessage(env, message.chat.id, welcome, {
+      reply_to_message_id: message.message_id,
+      reply_markup: mainKeyboard(env)
+    });
+    return;
+  }
+
   if (/^\/(?:help|starthelp)(?:@\w+)?(?:\s|$)/i.test(commandText)) {
     await sendMessage(env, message.chat.id, helpText(), {
-      reply_to_message_id: message.message_id, reply_markup: mainKeyboard(env)
+      reply_to_message_id: message.message_id,
+      reply_markup: mainKeyboard(env)
     });
     return;
   }
+
   if (/^\/(?:language|lang|settings)(?:@\w+)?(?:\s|$)/i.test(commandText)) {
     await sendMessage(env, message.chat.id, "اختر اللغة التي تريد ترجمة الرسائل إليها:", {
-      reply_to_message_id: message.message_id, reply_markup: languageKeyboard()
+      reply_to_message_id: message.message_id,
+      reply_markup: languageKeyboard()
     });
     return;
   }
-  const parsed = parseCommand(commandText);  const parsed = parseCommand(commandText);
+
+  const parsed = parseCommand(commandText);
   if (!parsed) return;
 
   const target = message.reply_to_message || message;
@@ -95,7 +121,7 @@ async function handleMessage(message, env) {
   let sourceText = target.text || target.caption || "";
   if (target === message) sourceText = removeCommandPrefix(commandText, parsed);
   if (!sourceText.trim()) {
-    await sendMessage(env, chatId, "أرسل كلمة «ترجم» ردًا على رسالة أو صورة، أو اكتب النص بعد الأمر مباشرة.", {
+    await sendMessage(env, chatId, "أرسل «ترجم» ردًا على رسالة أو صورة، أو اكتب النص بعد الأمر مباشرة.", {
       reply_to_message_id: message.message_id
     });
     return;
@@ -140,7 +166,7 @@ function removeCommandPrefix(text, parsed) {
   const words = withoutCommand.trim() ? withoutCommand.trim().split(/\s+/u) : [];
   return words.slice(parsed?.prefixWords || 0).join(" ").trim();
 }
-function containsArabic(text) {function containsArabic(text) {
+function containsArabic(text) {
   return /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/u.test(text);
 }
 
