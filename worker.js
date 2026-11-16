@@ -259,7 +259,7 @@ async function translateWithGemini(text, target, targetCode, env) {
         contents: [{
           role: "user",
           parts: [{
-            text: "Translate the following text into " + targetLabel + ". Use natural wording that a native speaker would normally use.\\n\\n" + text
+            text: "Translate the following text into " + targetLabel + ". Use natural wording that a native speaker would normally use.\n\n" + text
           }]
         }],
         generationConfig: {
