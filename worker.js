@@ -133,7 +133,12 @@ async function handleMessage(message, env) {
   }
 
   let sourceText = target.text || target.caption || "";
-  if (target === message) sourceText = removeCommandPrefix(commandText, parsed);
+  if (target === message) {
+    sourceText = removeCommandPrefix(commandText, parsed)
+      // Ignore a repeated standalone bot command accidentally pasted after the text.
+      .replace(/(?:^|\\n)\\s*(?:ترجم(?:ة|لي)?|ترجمان|ترج|ترجا)\\s*$/u, "")
+      .trim();
+  }
   if (!sourceText.trim()) {
     await sendMessage(env, chatId, "أرسل «ترجم» ردًا على رسالة أو صورة، أو اكتب النص بعد الأمر مباشرة.", {
       reply_to_message_id: message.message_id
@@ -224,8 +229,19 @@ async function translateText(text, requestedTarget, env, userId) {
     // For Arabic input, prefer the dedicated multilingual translation model.
     if (env.AI && containsArabicText) {
       try {
-        const candidate = await translateWithCloudflareAI(chunk, "ar", targetCode, env);
+        let candidate = await translateWithCloudflareAI(chunk, "ar", targetCode, env);
         assertTranslationLooksValid(chunk, candidate, targetCode);
+        // Use Gemini as a restrained proofreader to catch omissions and awkward wording.
+        // If review fails, keep the already validated M2M100 translation.
+        if (env.GEMINI_API_KEY) {
+          try {
+            const reviewed = await reviewTranslationWithGemini(chunk, candidate, target, targetCode, env);
+            assertTranslationLooksValid(chunk, reviewed, targetCode);
+            candidate = reviewed;
+          } catch (reviewError) {
+            console.error("Translation review skipped; keeping M2M100 result:", reviewError?.message || reviewError);
+          }
+        }
         translated.push(candidate); continue;
       } catch (error) { failures.push("Cloudflare M2M100: " + (error?.message || error)); }
     }
@@ -408,6 +424,41 @@ async function translateWithGemini(text, target, targetCode, env) {
     throw new Error("Gemini returned no translation: " + reason);
   }
   return translated;
+}
+
+async function reviewTranslationWithGemini(sourceText, draftTranslation, targetLabel, targetCode, env) {
+  const model = env.GEMINI_MODEL || "gemini-3.8-flash";
+  const response = await fetchWithTimeout(
+    "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        systemInstruction: {
+          parts: [{
+            text: "You are a meticulous translation editor. Compare the source with the draft translation. Correct missing details, especially time references, causes, negation, names, and relationships. Remove any content not supported by the source. Preserve the full meaning and use natural native wording. Do not explain or add commentary. Return only the corrected translation."
+          }]
+        },
+        contents: [{
+          role: "user",
+          parts: [{
+            text: "Target language: " + targetLabel + " (code " + targetCode + ").\\nSOURCE:\\n" + sourceText + "\\n\\nDRAFT TRANSLATION:\\n" + draftTranslation
+          }]
+        }],
+        generationConfig: { temperature: 0.0, maxOutputTokens: 1024 }
+      })
+    },
+    8000
+  );
+  const body = await response.text();
+  if (!response.ok) throw new Error("Gemini review HTTP " + response.status + ": " + body.slice(0, 200));
+  let data;
+  try { data = JSON.parse(body); }
+  catch { throw new Error("Gemini review returned invalid JSON"); }
+  const reviewed = (data.candidates?.[0]?.content?.parts || [])
+    .map(part => part.text || "").join("").trim();
+  if (!reviewed) throw new Error("Gemini review returned an empty result");
+  return reviewed;
 }
 
 async function translateWithCloudflareAI(text, source, target, env) {
