@@ -222,7 +222,7 @@ async function translateText(text, requestedTarget, env, userId) {
   }
   return translated.join("\n");
 }
-async function translateWithGemini(async function translateWithGemini(text, target, targetCode, env) {
+async function translateWithGemini(text, target, targetCode, env) {
   const model = env.GEMINI_MODEL || "gemini-3.8-flash";
   const targetLabel = ({
     ar: "Arabic", en: "English", fr: "French", de: "German",
