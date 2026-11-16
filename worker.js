@@ -216,8 +216,19 @@ async function translateText(text, requestedTarget, env, userId) {
     sv:"swedish",uk:"ukrainian",fa:"persian",ur:"urdu",id:"indonesian",vi:"vietnamese",th:"thai",he:"hebrew",bn:"bengali"
   };
   const target = languageNames[targetCode] || targetCode;
+  const quick = quickPhraseTranslation(text, targetCode, containsArabicText);
+  if (quick) return quick;
   const translated = [];
   for (const chunk of splitUtf8(text, 1100)) {
+    const failures = [];
+    // For Arabic input, prefer the dedicated multilingual translation model.
+    if (env.AI && containsArabicText) {
+      try {
+        const candidate = await translateWithCloudflareAI(chunk, "ar", targetCode, env);
+        assertTranslationLooksValid(chunk, candidate, targetCode);
+        translated.push(candidate); continue;
+      } catch (error) { failures.push("Cloudflare M2M100: " + (error?.message || error)); }
+    }
     if (env.GEMINI_API_KEY) {
       try {
         const candidate = await translateWithGemini(chunk, target, targetCode, env);
@@ -226,9 +237,7 @@ async function translateText(text, requestedTarget, env, userId) {
         continue;
       } catch (error) { console.error("Gemini failed validation or request; fallback:", error?.message || error); }
     }
-    const failures = [];
-    // Dedicated open-source translation model: use it before generic web translation fallbacks.
-    if (env.AI) {
+    if (env.AI && !containsArabicText) {
       try {
         const candidate = await translateWithCloudflareAI(chunk, detectedSource, target, env);
         assertTranslationLooksValid(chunk, candidate, targetCode);
@@ -254,6 +263,18 @@ async function translateText(text, requestedTarget, env, userId) {
   }
   return translated.join("\n");
 }
+function quickPhraseTranslation(text, targetCode, sourceIsArabic) {
+  if (!sourceIsArabic) return null;
+  const normalized = text.trim().replace(/[؟?!.,،؛:]+$/u, "").replace(/[ًٌٍَُِّْٰـ]/gu, "").replace(/\s+/gu, " ");
+  const phrases = {
+    "صباح الخير": { en: "Good morning.", fr: "Bonjour.", de: "Guten Morgen.", es: "Buenos días.", it: "Buongiorno.", tr: "Günaydın.", ru: "Доброе утро.", pt: "Bom dia." },
+    "مساء الخير": { en: "Good evening.", fr: "Bonsoir.", de: "Guten Abend.", es: "Buenas noches.", it: "Buonasera.", tr: "İyi akşamlar.", ru: "Добрый вечер.", pt: "Boa noite." },
+    "مرحبا": { en: "Hello.", fr: "Bonjour.", de: "Hallo.", es: "Hola.", it: "Ciao.", tr: "Merhaba.", ru: "Здравствуйте.", pt: "Olá." },
+    "شكرا": { en: "Thank you.", fr: "Merci.", de: "Danke.", es: "Gracias.", it: "Grazie.", tr: "Teşekkür ederim.", ru: "Спасибо.", pt: "Obrigado." }
+  };
+  return phrases[normalized]?.[targetCode] || null;
+}
+
 function assertTranslationLooksValid(sourceText, translatedText, targetCode) {
   const result = String(translatedText || "").trim();
   if (!result) throw new Error("Translation result is empty");
@@ -523,12 +544,12 @@ async function handleCallbackQuery(query,env) {
   await telegramCall(env,"answerCallbackQuery",{callback_query_id:query.id});
 }
 function detectSourceCode(text) {
-  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/u.test(text)) return "arabic";
-  if (/[\u0400-\u04FF]/u.test(text)) return "russian";
-  if (/[\u3040-\u30FF]/u.test(text)) return "japanese";
-  if (/[\u4E00-\u9FFF]/u.test(text)) return "chinese";
-  if (/[\uAC00-\uD7AF]/u.test(text)) return "korean";
-  return "english";
+  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/u.test(text)) return "ar";
+  if (/[\u0400-\u04FF]/u.test(text)) return "ru";
+  if (/[\u3040-\u30FF]/u.test(text)) return "ja";
+  if (/[\u4E00-\u9FFF]/u.test(text)) return "zh";
+  if (/[\uAC00-\uD7AF]/u.test(text)) return "ko";
+  return "en";
 }
 async function fetchWithTimeout(url,options={},timeoutMs=5000) {
   const controller=new AbortController();
