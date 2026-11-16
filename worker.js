@@ -276,27 +276,31 @@ async function translateText(text, requestedTarget, env, userId) {
   const translated = [];
   for (const chunk of splitUtf8(text, 1100)) {
     const failures = [];
-    // M2M100 is the primary translation engine for every language we can identify.
-    // Gemini is kept as a fallback; optional proofreading is disabled by default to
-    // avoid making every successful translation depend on Gemini quota.
+    const glossary = prepareEngineGlossary(chunk, targetCode);
+    const engineInput = glossary.text;
+    const restoreAndValidate = candidate => {
+      const restored = glossary.restore(candidate);
+      return assertTranslationLooksValid(chunk, restored, targetCode);
+    };
+    // Apply the same phrase memory to M2M100 and every fallback provider.
+    // Gemini also receives contextual glossary hints in its translation prompt.
     const detectedChunkLanguage = detectSourceCode(chunk);
     const m2mSource = cloudflareM2MLanguage(detectedChunkLanguage);
     const m2mTarget = cloudflareM2MLanguage(targetCode);
     if (env.AI && m2mSource && m2mTarget) {
       try {
-        const candidate = await translateWithCloudflareAI(chunk, m2mSource, m2mTarget, env);
-        assertTranslationLooksValid(chunk, candidate, targetCode);
+        const candidate = await translateWithCloudflareAI(engineInput, m2mSource, m2mTarget, env);
+        const restoredCandidate = restoreAndValidate(candidate);
         if (env.GEMINI_API_KEY && env.GEMINI_REVIEW_TRANSLATIONS === "true") {
           try {
-            const reviewed = await reviewTranslationWithGemini(chunk, candidate, target, targetCode, env);
-            assertTranslationLooksValid(chunk, reviewed, targetCode);
-            translated.push(reviewed);
+            const reviewed = await reviewTranslationWithGemini(chunk, restoredCandidate, target, targetCode, env);
+            translated.push(assertTranslationLooksValid(chunk, reviewed, targetCode));
           } catch (reviewError) {
             console.error("Optional Gemini review skipped; keeping M2M100 result:", reviewError?.message || reviewError);
-            translated.push(candidate);
+            translated.push(restoredCandidate);
           }
         } else {
-          translated.push(candidate);
+          translated.push(restoredCandidate);
         }
         continue;
       } catch (error) {
@@ -307,8 +311,7 @@ async function translateText(text, requestedTarget, env, userId) {
     if (env.GEMINI_API_KEY) {
       try {
         const candidate = await translateWithGemini(chunk, target, targetCode, env);
-        assertTranslationLooksValid(chunk, candidate, targetCode);
-        translated.push(candidate);
+        translated.push(assertTranslationLooksValid(chunk, candidate, targetCode));
         continue;
       } catch (error) {
         const reason = error?.message || String(error);
@@ -317,24 +320,80 @@ async function translateText(text, requestedTarget, env, userId) {
       }
     }
     try {
-      const candidate = await translateWithGoogle(chunk, source, targetCode);
-      assertTranslationLooksValid(chunk, candidate, targetCode);
-      translated.push(candidate); continue;
+      const candidate = await translateWithGoogle(engineInput, source, targetCode);
+      translated.push(restoreAndValidate(candidate)); continue;
     } catch (error) { failures.push("Google: " + (error?.message || error)); }
     try {
-      const candidate = await translateWithLibreTranslate(chunk, source, targetCode);
-      assertTranslationLooksValid(chunk, candidate, targetCode);
-      translated.push(candidate); continue;
+      const candidate = await translateWithLibreTranslate(engineInput, source, targetCode);
+      translated.push(restoreAndValidate(candidate)); continue;
     } catch (error) { failures.push("LibreTranslate: " + (error?.message || error)); }
     try {
-      const candidate = await translateWithMyMemory(chunk, source, targetCode, env);
-      assertTranslationLooksValid(chunk, candidate, targetCode);
-      translated.push(candidate); continue;
+      const candidate = await translateWithMyMemory(engineInput, source, targetCode, env);
+      translated.push(restoreAndValidate(candidate)); continue;
     } catch (error) { failures.push("MyMemory: " + (error?.message || error)); }
     throw new Error("All translation providers failed. " + failures.join(" | "));
   }
   return translated.join("\n");
 }
+// Phrase-level translation memory for provider engines without native glossary support.
+// Protected terms are restored after translation, so each provider sees consistent terminology.
+function prepareEngineGlossary(sourceText, targetCode) {
+  if (targetCode !== "fr" || !containsArabic(sourceText)) {
+    return { text: sourceText, restore: value => value };
+  }
+  const entries = [
+    ["صباح الخير كيف حالك", "Bonjour, comment vas-tu ?"],
+    ["هل أنت بخير", "Tu vas bien ?"],
+    ["كيف حالك اليوم", "Comment vas-tu aujourd'hui ?"],
+    ["كيف حالك", "Comment vas-tu ?"],
+    ["لم أجدك في العمل اليوم", "Je ne t'ai pas vu au travail aujourd'hui"],
+    ["لم أرك في العمل اليوم", "Je ne t'ai pas vu au travail aujourd'hui"],
+    ["لم أتمكن من الحضور أمس", "Je n'ai pas pu venir hier"],
+    ["لم أستطع الذهاب إلى العمل اليوم", "Je n'ai pas pu aller au travail aujourd'hui"],
+    ["أنا اسمي", "Je m'appelle"],
+    ["اسمي", "Je m'appelle"],
+    ["محل عطور", "un magasin de parfums"],
+    ["ظروف العمل", "des obligations professionnelles"],
+    ["بسبب ظروف العمل", "en raison de mes obligations professionnelles"],
+    ["صباح الخير", "Bonjour"],
+    ["مساء الخير", "Bonsoir"],
+    ["شكرا لك", "Merci"],
+    ["من فضلك", "s'il te plaît"],
+    ["إلى اللقاء", "Au revoir"],
+    ["أنا بخير", "Je vais bien"],
+    ["الحمد لله", "Dieu merci"],
+    ["في العمل", "au travail"],
+    ["في فرنسا", "en France"],
+    ["في مصر", "en Égypte"],
+    ["اليوم", "aujourd'hui"],
+    ["أمس", "hier"],
+    ["غدا", "demain"]
+  ];
+  let protectedText = sourceText;
+  const replacements = [];
+  for (const [phrase, french] of entries) {
+    if (!protectedText.includes(phrase)) continue;
+    const token = "ZXQTJ" + String(replacements.length).padStart(3, "0") + "QXZ";
+    protectedText = protectedText.split(phrase).join(token);
+    replacements.push([token, french]);
+  }
+  return {
+    text: protectedText,
+    restore(value) {
+      let result = String(value || "");
+      for (const [token, french] of replacements) {
+        result = result.split(token).join(french);
+      }
+      // Recover tokens if a provider changes their casing.
+      for (const [token, french] of replacements) {
+        const loose = new RegExp(token, "gi");
+        result = result.replace(loose, french);
+      }
+      return result;
+    }
+  };
+}
+
 function quickPhraseTranslation(text, targetCode, sourceIsArabic) {
   if (!sourceIsArabic) return null;
   const normalized = text.trim().replace(/[؟?!.,،؛:]+$/u, "").replace(/[ًٌٍَُِّْٰـ]/gu, "").replace(/\s+/gu, " ");
