@@ -45,6 +45,21 @@ export default {
 
 async function handleMessage(message, env) {
   const commandText = (message.text || message.caption || "").trim();
+
+  if (/^\/start(?:@\w+)?(?:\s|$)/i.test(commandText)) {
+    await sendMessage(env, message.chat.id,
+      "مرحبًا بك في ترجمان | TARJUMAN BOT 🌐\n\nأترجم النصوص والنصوص الموجودة داخل الصور.\n\n• أرسل: ترجم، ردًا على رسالة أو صورة.\n• أو اكتب: ترجم ثم النص مباشرة.\n• لتحديد اللغة: ترجم للإنجليزية أو ترجم للفرنسية.\n\nعند كتابة «ترجم» وحدها، تكون الترجمة تلقائية: العربية إلى الإنجليزية، واللغات الأخرى إلى العربية.",
+      { reply_to_message_id: message.message_id });
+    return;
+  }
+
+  if (/^\/(?:help|starthelp)(?:@\w+)?(?:\s|$)/i.test(commandText)) {
+    await sendMessage(env, message.chat.id,
+      "طريقة الاستخدام:\n1. أرسل «ترجم» ردًا على الرسالة أو الصورة.\n2. أو اكتب «ترجم» ثم النص.\n3. لتحديد لغة أخرى، اكتب مثلًا: ترجم للفرنسية.",
+      { reply_to_message_id: message.message_id });
+    return;
+  }
+
   const parsed = parseCommand(commandText);
   if (!parsed) return;
 
@@ -135,22 +150,53 @@ function splitUtf8(text, maxBytes = 430) {
 }
 
 async function translateText(text, requestedTarget, env) {
-  const source = containsArabic(text) ? "ar" : "autodetect";
+  const source = containsArabic(text) ? "ar" : "auto";
   const target = requestedTarget === "auto" ? (source === "ar" ? "en" : "ar") : requestedTarget;
   const chunks = splitUtf8(text);
   const translated = [];
+
   for (const chunk of chunks) {
-    const params = new URLSearchParams({ q: chunk, langpair: source + "|" + target, mt: "1" });
-    if (env.MYMEMORY_EMAIL) params.set("de", env.MYMEMORY_EMAIL);
-    const response = await fetch("https://api.mymemory.translated.net/get?" + params.toString());
-    if (!response.ok) throw new Error("Translation provider HTTP " + response.status);
-    const data = await response.json();
-    if (data.responseStatus !== 200 || !data.responseData?.translatedText) {
-      throw new Error(data.responseDetails || "Translation service did not return a result");
+    try {
+      translated.push(await translateWithGoogle(chunk, source, target));
+    } catch (googleError) {
+      console.error("Primary translation provider failed:", googleError?.message || googleError);
+      translated.push(await translateWithMyMemory(chunk, source, target, env));
     }
-    translated.push(decodeHtml(data.responseData.translatedText));
   }
   return translated.join("\n");
+}
+
+async function translateWithGoogle(text, source, target) {
+  const params = new URLSearchParams({
+    client: "gtx",
+    sl: source,
+    tl: target,
+    dt: "t",
+    q: text
+  });
+  const response = await fetch("https://translate.googleapis.com/translate_a/single?" + params.toString());
+  if (!response.ok) throw new Error("Google translation HTTP " + response.status);
+  const data = await response.json();
+  const result = Array.isArray(data?.[0])
+    ? data[0].map(part => Array.isArray(part) ? part[0] || "" : "").join("")
+    : "";
+  if (!result.trim()) throw new Error("Google translation returned an empty result");
+  return result;
+}
+
+async function translateWithMyMemory(text, source, target, env) {
+  const params = new URLSearchParams({
+    q: text,
+    langpair: (source === "auto" ? "autodetect" : source) + "|" + target
+  });
+  if (env.MYMEMORY_EMAIL) params.set("de", env.MYMEMORY_EMAIL);
+  const response = await fetch("https://api.mymemory.translated.net/get?" + params.toString());
+  if (!response.ok) throw new Error("Translation provider HTTP " + response.status);
+  const data = await response.json();
+  if (data.responseStatus !== 200 || !data.responseData?.translatedText) {
+    throw new Error(data.responseDetails || "Translation services are temporarily unavailable");
+  }
+  return decodeHtml(data.responseData.translatedText);
 }
 
 function decodeHtml(value) {
