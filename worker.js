@@ -306,7 +306,48 @@ function assertTranslationLooksValid(sourceText, translatedText, targetCode) {
   if (result === sourceText.trim() && targetCode !== "auto") {
     throw new Error("Translation validation failed: unchanged source text");
   }
+  assertKeyMeaningMarkersPreserved(sourceText, result, targetCode);
   return result;
+}
+
+function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode) {
+  if (!containsArabic(sourceText)) return;
+  const source = sourceText.replace(/[\u064B-\u065F\u0670ـ]/gu, "").toLowerCase();
+  const result = translatedText.toLowerCase();
+
+  const timeMarkers = [
+    { source: /\bأمس\b/u, targets: {
+      en: /\b(yesterday|the previous day|the day before)\b/i,
+      fr: /\b(hier|la veille)\b/i, de: /\b(gestern|am Vortag)\b/i,
+      es: /\b(ayer|el día anterior)\b/i, it: /\b(ieri|il giorno prima)\b/i,
+      tr: /\b(dün|bir önceki gün)\b/i, ru: /\b(вчера|предыдущий день)\b/i
+    }},
+    { source: /\bاليوم\b/u, targets: {
+      en: /\b(today|this day)\b/i, fr: /\b(aujourd'hui|ce jour)\b/i,
+      de: /\b(heute|an diesem tag)\b/i, es: /\b(hoy|este día)\b/i,
+      it: /\b(oggi|questo giorno)\b/i, tr: /\b(bugün|bugun)\b/i,
+      ru: /\b(сегодня|в этот день)\b/i
+    }},
+    { source: /\bغدا\b/u, targets: {
+      en: /\b(tomorrow|the next day)\b/i, fr: /\b(demain|le lendemain)\b/i,
+      de: /\b(morgen|am nächsten tag)\b/i, es: /\b(mañana|al día siguiente)\b/i,
+      it: /\b(domani|il giorno dopo)\b/i, tr: /\b(yarın|ertesi gün)\b/i,
+      ru: /\b(завтра|на следующий день)\b/i
+    }},
+    { source: /\bالآن\b/u, targets: {
+      en: /\b(now|right now|currently)\b/i, fr: /\b(maintenant|actuellement)\b/i,
+      de: /\b(jetzt|derzeit)\b/i, es: /\b(ahora|actualmente)\b/i,
+      it: /\b(ora|adesso|attualmente)\b/i, tr: /\b(şimdi|su anda)\b/i,
+      ru: /\b(сейчас|в настоящее время)\b/i
+    }}
+  ];
+  for (const marker of timeMarkers) {
+    if (!marker.source.test(source)) continue;
+    const targetPattern = marker.targets[targetCode];
+    if (targetPattern && !targetPattern.test(result)) {
+      throw new Error("Translation validation failed: a source time reference was omitted");
+    }
+  }
 }
 
 async function translateImageWithGemini(message, requestedTarget, env, userId) {
