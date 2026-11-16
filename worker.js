@@ -84,7 +84,7 @@ async function handleMessage(message, env) {
   }
 
   let sourceText = target.text || target.caption || "";
-  if (target === message) sourceText = removeCommandPrefix(commandText);
+  if (target === message) sourceText = removeCommandPrefix(commandText, parsed);
   if (!sourceText.trim()) {
     await sendMessage(env, chatId, "أرسل كلمة «ترجم» ردًا على رسالة أو صورة، أو اكتب النص بعد الأمر مباشرة.", {
       reply_to_message_id: message.message_id
@@ -100,10 +100,21 @@ async function handleMessage(message, env) {
 function parseCommand(text) {
   const normalized = text.trim().replace(/^\/translate(?:@\w+)?/i, "ترجم").trim();
   if (!/^ترجم(?:\s|$)/u.test(normalized)) return null;
-  const rest = normalized.replace(/^ترجم\s*/u, "").trim();
-  if (!rest) return { target: "auto" };
 
-  const destination = rest.replace(/^(?:إلى|الى|لل|لـ|ل)\s*/u, "").trim().toLowerCase();
+  const rest = normalized.replace(/^ترجم\s*/u, "").trim();
+  if (!rest) return { target: "auto", prefixWords: 0 };
+
+  const words = rest.split(/\s+/u);
+  let candidate = words[0];
+  let prefixWords = 1;
+
+  if (candidate === "إلى" || candidate === "الى") {
+    candidate = words[1] || "";
+    prefixWords = 2;
+  }
+
+  candidate = candidate.replace(/^(?:لل|لـ|ل)/u, "").toLowerCase();
+
   const languages = {
     "العربية":"ar", "عربية":"ar", "عربي":"ar", "arabic":"ar", "ar":"ar",
     "الإنجليزية":"en", "إنجليزية":"en", "انجليزية":"en", "إنجليزي":"en", "انجليزي":"en", "english":"en", "en":"en",
@@ -118,14 +129,16 @@ function parseCommand(text) {
     "البرتغالية":"pt", "برتغالية":"pt", "portuguese":"pt", "pt":"pt",
     "الهندية":"hi", "هندية":"hi", "هندي":"hi", "hindi":"hi", "hi":"hi"
   };
-  if (languages[destination]) return { target: languages[destination] };
-  if (/^[a-z]{2}(?:-[A-Z]{2})?$/.test(destination)) return { target: destination };
-  return { target: "auto" };
+
+  if (languages[candidate]) return { target: languages[candidate], prefixWords };
+  if (/^[a-z]{2}(?:-[A-Z]{2})?$/.test(candidate)) return { target: candidate, prefixWords };
+  return { target: "auto", prefixWords: 0 };
 }
 
-function removeCommandPrefix(text) {
-  return text.replace(/^\/translate(?:@\w+)?\s*/i, "")
-    .replace(/^ترجم(?:\s+(?:إلى|الى|لـ|ل)\s*[\p{L}-]+)?\s*/u, "").trim();
+function removeCommandPrefix(text, parsed) {
+  const normalized = text.trim().replace(/^\/translate(?:@\w+)?/i, "ترجم").trim();
+  const words = normalized.split(/\s+/u);
+  return words.slice(1 + (parsed?.prefixWords || 0)).join(" ").trim();
 }
 
 function containsArabic(text) {
