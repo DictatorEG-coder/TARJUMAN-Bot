@@ -265,7 +265,7 @@ async function translateText(text, requestedTarget, env, userId) {
     // M2M100 requires an explicit source language. The script-based detector
     // cannot distinguish Latin-script languages such as French and English,
     // so never label unknown Latin text as English and feed it to this model.
-    const hasLatinLetters = /[A-Za-z\\u00C0-\\u024F]/u.test(chunk);
+    const hasLatinLetters = /[A-Za-zÀ-ÿ]/u.test(chunk);
     if (env.AI && !containsArabicText && !hasLatinLetters) {
       try {
         const candidate = await translateWithCloudflareAI(chunk, detectedSource, target, env);
