@@ -227,6 +227,14 @@ async function translateText(text, requestedTarget, env, userId) {
       } catch (error) { console.error("Gemini failed validation or request; fallback:", error?.message || error); }
     }
     const failures = [];
+    // Dedicated open-source translation model: use it before generic web translation fallbacks.
+    if (env.AI) {
+      try {
+        const candidate = await translateWithCloudflareAI(chunk, detectedSource, target, env);
+        assertTranslationLooksValid(chunk, candidate, targetCode);
+        translated.push(candidate); continue;
+      } catch (error) { failures.push("Cloudflare M2M100: " + (error?.message || error)); }
+    }
     try {
       const candidate = await translateWithGoogle(chunk, source, targetCode);
       assertTranslationLooksValid(chunk, candidate, targetCode);
@@ -242,10 +250,6 @@ async function translateText(text, requestedTarget, env, userId) {
       assertTranslationLooksValid(chunk, candidate, targetCode);
       translated.push(candidate); continue;
     } catch (error) { failures.push("MyMemory: " + (error?.message || error)); }
-    if (env.AI) {
-      try { translated.push(await translateWithCloudflareAI(chunk, detectedSource, target, env)); continue; }
-      catch (error) { failures.push("Cloudflare AI: " + (error?.message || error)); }
-    }
     throw new Error("All translation providers failed. " + failures.join(" | "));
   }
   return translated.join("\n");
@@ -519,11 +523,11 @@ async function handleCallbackQuery(query,env) {
   await telegramCall(env,"answerCallbackQuery",{callback_query_id:query.id});
 }
 function detectSourceCode(text) {
-  if(/[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF]/u.test(text))return "arabic";
-  if(/[\\u0400-\\u04FF]/u.test(text))return "russian";
-  if(/[\\u3040-\\u30FF]/u.test(text))return "japanese";
-  if(/[\\u4E00-\\u9FFF]/u.test(text))return "chinese";
-  if(/[\\uAC00-\\uD7AF]/u.test(text))return "korean";
+  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/u.test(text)) return "arabic";
+  if (/[\u0400-\u04FF]/u.test(text)) return "russian";
+  if (/[\u3040-\u30FF]/u.test(text)) return "japanese";
+  if (/[\u4E00-\u9FFF]/u.test(text)) return "chinese";
+  if (/[\uAC00-\uD7AF]/u.test(text)) return "korean";
   return "english";
 }
 async function fetchWithTimeout(url,options={},timeoutMs=5000) {
