@@ -646,40 +646,42 @@ async function handleCallbackQuery(query,env) {
   await telegramCall(env,"answerCallbackQuery",{callback_query_id:query.id});
 }
 function detectSourceCode(text) {
-  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/u.test(text)) return "ar";
-  if (/[\u0400-\u04FF]/u.test(text)) return "ru";
+  if (/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF]/u.test(text)) {
+    if (/[پچژگ]/u.test(text)) return "fa";
+    if (/[ٹڈڑںھ]/u.test(text)) return "ur";
+    return "ar";
+  }
+  if (/[\u0400-\u04FF]/u.test(text)) return /[іїєґ]/iu.test(text) ? "uk" : "ru";
   if (/[\u3040-\u30FF]/u.test(text)) return "ja";
   if (/[\u4E00-\u9FFF]/u.test(text)) return "zh";
   if (/[\uAC00-\uD7AF]/u.test(text)) return "ko";
+  if (/[\u0E00-\u0E7F]/u.test(text)) return "th";
+  if (/[\u0980-\u09FF]/u.test(text)) return "bn";
 
-  // Lightweight lexical detection for common Latin-script languages.
-  // It is intentionally conservative: a wrong source language can be worse
-  // than falling through to an automatic-detection provider.
-  const words = (text.toLowerCase().match(/[\\p{L}]+/gu) || []);
+  const words = text.toLowerCase().match(/[\p{L}]+/gu) || [];
   const sample = " " + words.join(" ") + " ";
   const scores = {
-    fr: [" je ", " tu ", " vous ", " nous ", " que ", " qui ", " dans ", " avec ", " mais ", " une ", " des ", " est ", " sont ", " était ", " serait ", " pas ", " pour ", " tout ", " bien ", " finalement ", " parce ", " demain ", " aujourd "],
-    en: [" the ", " and ", " is ", " are ", " was ", " were ", " you ", " your ", " that ", " this ", " with ", " for ", " from ", " have ", " has ", " had ", " but ", " because ", " would ", " could ", " should ", " yesterday ", " tomorrow "],
-    de: [" der ", " die ", " das ", " und ", " ist ", " sind ", " ich ", " nicht ", " mit ", " für ", " ein ", " eine ", " aber ", " weil ", " wird ", " war ", " morgen ", " gestern "],
-    es: [" el ", " la ", " los ", " las ", " y ", " que ", " de ", " en ", " es ", " está ", " pero ", " porque ", " para ", " una ", " como ", " mañana ", " ayer "],
-    it: [" il ", " lo ", " la ", " gli ", " le ", " e ", " che ", " di ", " non ", " sono ", " con ", " per ", " ma ", " perché ", " una ", " domani ", " ieri "],
-    pt: [" o ", " a ", " os ", " as ", " e ", " de ", " que ", " não ", " uma ", " para ", " com ", " mas ", " porque ", " está ", " amanhã ", " ontem "],
+    fr: [" je ", " tu ", " vous ", " nous ", " que ", " qui ", " dans ", " avec ", " mais ", " une ", " des ", " est ", " sont ", " était ", " serait ", " pas ", " pour ", " tout ", " bien ", " finalement ", " parce ", " demain ", " aujourd ", " bonjour ", " comment ", " allez ", " merci ", " suis ", " heureux ", " parler "],
+    en: [" the ", " and ", " is ", " are ", " was ", " were ", " you ", " your ", " that ", " this ", " with ", " for ", " from ", " have ", " has ", " had ", " but ", " because ", " would ", " could ", " should ", " yesterday ", " tomorrow ", " hello ", " good ", " morning ", " thanks ", " please ", " couldn't ", " attend "],
+    de: [" der ", " die ", " das ", " und ", " ist ", " sind ", " ich ", " nicht ", " mit ", " für ", " ein ", " eine ", " aber ", " weil ", " wird ", " war ", " morgen ", " gestern ", " guten ", " freue ", " dich ", " sehen ", " geht ", " wie ", " dir "],
+    es: [" el ", " la ", " los ", " las ", " y ", " que ", " de ", " en ", " es ", " está ", " pero ", " porque ", " para ", " una ", " como ", " mañana ", " ayer ", " estoy ", " muy ", " feliz ", " hablar ", " contigo ", " hola ", " gracias "],
+    it: [" il ", " lo ", " la ", " gli ", " le ", " e ", " che ", " di ", " non ", " sono ", " con ", " per ", " ma ", " perché ", " una ", " domani ", " ieri ", " buongiorno ", " grazie ", " felice ", " parlare "],
+    pt: [" o ", " a ", " os ", " as ", " e ", " de ", " que ", " não ", " uma ", " para ", " com ", " mas ", " porque ", " está ", " amanhã ", " ontem ", " olá ", " obrigado ", " feliz ", " falar "],
     nl: [" de ", " het ", " een ", " en ", " is ", " zijn ", " niet ", " dat ", " met ", " voor ", " maar ", " omdat ", " ik ", " jij ", " gisteren "],
     tr: [" ve ", " bir ", " bu ", " şu ", " için ", " değil ", " ama ", " çok ", " ben ", " sen ", " bugün ", " yarın ", " dün "],
     pl: [" i ", " oraz ", " nie ", " jest ", " są ", " się ", " że ", " dla ", " ale ", " bardzo ", " jutro ", " wczoraj "],
     sv: [" och ", " att ", " det ", " är ", " jag ", " inte ", " med ", " för ", " men ", " som ", " idag ", " imorgon "]
   };
-  let best = "en", bestScore = 0;
+  let best = null, bestScore = 0;
   for (const [code, markers] of Object.entries(scores)) {
     let score = 0;
     for (const marker of markers) if (sample.includes(marker)) score++;
     if (score > bestScore) { best = code; bestScore = score; }
   }
-  // Accent and language-specific characters provide additional evidence.
-  if (/[àâçèéêëîïôùûüÿœ]/iu.test(text) && bestScore < 2) best = "fr";
-  else if (/[ñ¿¡]/u.test(text) && bestScore < 2) best = "es";
-  else if (/[ãõ]/iu.test(text) && bestScore < 2) best = "pt";
-  else if (/[äöß]/iu.test(text) && bestScore < 2) best = "de";
+  if (/[àâçèéêëîïôùûüÿœ]/iu.test(text) && bestScore < 2) return "fr";
+  if (/[ñ¿¡]/u.test(text) && bestScore < 2) return "es";
+  if (/[ãõ]/iu.test(text) && bestScore < 2) return "pt";
+  if (/[äöß]/iu.test(text) && bestScore < 2) return "de";
   return best;
 }
 async function fetchWithTimeout(url,options={},timeoutMs=5000) {
