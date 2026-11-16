@@ -103,6 +103,13 @@ async function handleMessage(message, env) {
 
   const parsed = parseCommand(commandText);
   if (!parsed) return;
+  if (parsed.invalidLanguage) {
+    await sendMessage(env, message.chat.id,
+      "لم أتعرف على اللغة المطلوبة. اكتب اسمًا واضحًا مثل: الإنجليزية، الفرنسية، الألمانية، اليابانية، الكورية، أو اختر اللغة من زر «اختيار لغة الترجمة».",
+      { reply_to_message_id: message.message_id }
+    );
+    return;
+  }
 
   const target = message.reply_to_message || message;
   const chatId = message.chat.id;
@@ -194,12 +201,31 @@ function parseCommand(text) {
     "البرتغالية":"pt","برتغالية":"pt","portuguese":"pt","pt":"pt",
     "الهندية":"hi","هندية":"hi","هندي":"hi","hindi":"hi","hi":"hi"
   };
-  // Common Arabic spelling slips should not silently fall back to the default language.
+  // Complete aliases for every language shown in the bot's language menu.
   Object.assign(languages, {
-    "يبانية":"ja","يباني":"ja","يابانيه":"ja","اليابانيه":"ja","يابانبة":"ja"
+    "يبانية":"ja","يباني":"ja","يابانيه":"ja","اليابانيه":"ja","يابانبة":"ja",
+    "الهولندية":"nl","هولندية":"nl","هولندي":"nl","dutch":"nl","nl":"nl",
+    "البولندية":"pl","بولندية":"pl","بولندي":"pl","polish":"pl","pl":"pl",
+    "الكورية":"ko","كورية":"ko","كوري":"ko","korean":"ko","ko":"ko",
+    "السويدية":"sv","سويدية":"sv","سويدي":"sv","swedish":"sv","sv":"sv",
+    "الأوكرانية":"uk","اوكرانية":"uk","أوكرانية":"uk","اوكراني":"uk","أوكراني":"uk","ukrainian":"uk","uk":"uk",
+    "الفارسية":"fa","فارسية":"fa","فارسي":"fa","persian":"fa","fa":"fa",
+    "الأردية":"ur","اردية":"ur","أردية":"ur","اردى":"ur","أردي":"ur","urdu":"ur","ur":"ur",
+    "الإندونيسية":"id","الاندونيسية":"id","إندونيسية":"id","اندونيسية":"id","إندونيسي":"id","indonesian":"id","id":"id",
+    "الفيتنامية":"vi","فيتنامية":"vi","فيتنامي":"vi","vietnamese":"vi","vi":"vi",
+    "التايلاندية":"th","تايلاندية":"th","تايلاندي":"th","thai":"th","th":"th",
+    "العبرية":"he","عبرية":"he","عبري":"he","hebrew":"he","he":"he",
+    "البنغالية":"bn","بنغالية":"bn","بنغالي":"bn","bengali":"bn","bn":"bn"
   });
+  if (candidate === "الصينية" && words[1] === "المبسطة") {
+    return { target: "zh-CN", prefixWords: prefixWords + 1 };
+  }
   if (languages[candidate]) return { target: languages[candidate], prefixWords };
   if (/^[a-z]{2}(?:-[A-Z]{2})?$/.test(candidate)) return { target: candidate, prefixWords };
+  // A misspelled or unsupported target after ل/لل/إلى must not be treated as source text.
+  if (/^(?:لل|لـ|ل|إلى|الى)/u.test(words[0])) {
+    return { target: "auto", prefixWords: 0, invalidLanguage: candidate };
+  }
   return { target: "auto", prefixWords: 0 };
 }
 function removeCommandPrefix(text, parsed) {
