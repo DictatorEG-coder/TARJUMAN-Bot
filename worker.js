@@ -28,7 +28,13 @@ export default {
       const chatId = message.chat?.id;
       if (chatId) {
         const replyId = message.reply_to_message?.message_id || message.message_id;
-        await sendMessage(env, chatId, "تعذرت معالجة طلبك الآن. حاول مرة أخرى بعد قليل.", {
+        let userMessage = "تعذرت معالجة طلبك الآن. حاول مرة أخرى بعد قليل.";
+        if (String(error?.message).includes("OCR_SPACE_API_KEY")) {
+          userMessage = "ترجمة الصور لم تُفعّل بعد. يلزم إضافة مفتاح OCR_SPACE_API_KEY في إعدادات Cloudflare.";
+        } else if (/quota|limit|403|429/i.test(String(error?.message))) {
+          userMessage = "وصلنا إلى حد الاستخدام المجاني لخدمة الترجمة أو قراءة الصور. حاول لاحقًا.";
+        }
+        await sendMessage(env, chatId, userMessage, {
           reply_to_message_id: replyId
         }).catch(() => {});
       }
@@ -80,7 +86,7 @@ function parseCommand(text) {
   const rest = normalized.replace(/^ترجم\s*/u, "").trim();
   if (!rest) return { target: "auto" };
 
-  const destination = rest.replace(/^(?:إلى|الى|لـ|ل)\s*/u, "").trim().toLowerCase();
+  const destination = rest.replace(/^(?:إلى|الى|لل|لـ|ل)\s*/u, "").trim().toLowerCase();
   const languages = {
     "العربية":"ar", "عربي":"ar", "arabic":"ar", "ar":"ar",
     "الإنجليزية":"en", "انجليزية":"en", "إنجليزي":"en", "انجليزي":"en", "english":"en", "en":"en",
