@@ -342,7 +342,7 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     }}
   ];
   for (const marker of timeMarkers) {
-    if (!marker.source.test(source)) continue;
+    if (!source.includes(marker.source)) continue;
     const targetPattern = marker.targets[targetCode];
     if (targetPattern && !targetPattern.test(result)) {
       throw new Error("Translation validation failed: a source time reference was omitted");
