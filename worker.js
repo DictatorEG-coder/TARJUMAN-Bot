@@ -256,9 +256,17 @@ async function translateText(text, requestedTarget, env, userId) {
         assertTranslationLooksValid(chunk, candidate, targetCode);
         translated.push(candidate);
         continue;
-      } catch (error) { console.error("Gemini failed validation or request; fallback:", error?.message || error); }
+      } catch (error) {
+        const reason = error?.message || String(error);
+        failures.push("Gemini: " + reason);
+        console.error("Gemini failed validation or request; fallback:", reason);
+      }
     }
-    if (env.AI && !containsArabicText) {
+    // M2M100 requires an explicit source language. The script-based detector
+    // cannot distinguish Latin-script languages such as French and English,
+    // so never label unknown Latin text as English and feed it to this model.
+    const hasLatinLetters = /[A-Za-z\\u00C0-\\u024F]/u.test(chunk);
+    if (env.AI && !containsArabicText && !hasLatinLetters) {
       try {
         const candidate = await translateWithCloudflareAI(chunk, detectedSource, target, env);
         assertTranslationLooksValid(chunk, candidate, targetCode);
