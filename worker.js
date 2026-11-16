@@ -111,13 +111,27 @@ async function handleMessage(message, env) {
   if (target.photo?.length) {
     await sendChatAction(env, chatId, "typing");
     let imageResult = "";
-    if (env.GEMINI_API_KEY) {
+
+    // First choice: Cloudflare-hosted Moondream OCR, then the normal translation pipeline.
+    if (env.AI) {
+      try {
+        const extracted = await extractImageTextWithMoondream(target, env);
+        if (extracted) imageResult = await translateText(extracted, parsed.target, env, message.from?.id);
+      } catch (error) {
+        console.error("Moondream OCR failed; trying Gemini vision:", error?.stack || error);
+      }
+    }
+
+    // Vision fallback: read and translate directly in one request.
+    if (!imageResult && env.GEMINI_API_KEY) {
       try {
         imageResult = await translateImageWithGemini(target, parsed.target, env, message.from?.id);
       } catch (error) {
         console.error("Gemini image translation failed; trying OCR fallback:", error?.stack || error);
       }
     }
+
+    // Final OCR fallback.
     if (!imageResult) {
       const extracted = await extractImageText(target, env);
       if (!extracted) {
@@ -180,6 +194,10 @@ function parseCommand(text) {
     "البرتغالية":"pt","برتغالية":"pt","portuguese":"pt","pt":"pt",
     "الهندية":"hi","هندية":"hi","هندي":"hi","hindi":"hi","hi":"hi"
   };
+  // Common Arabic spelling slips should not silently fall back to the default language.
+  Object.assign(languages, {
+    "يبانية":"ja","يباني":"ja","يابانيه":"ja","اليابانيه":"ja","يابانبة":"ja"
+  });
   if (languages[candidate]) return { target: languages[candidate], prefixWords };
   if (/^[a-z]{2}(?:-[A-Z]{2})?$/.test(candidate)) return { target: candidate, prefixWords };
   return { target: "auto", prefixWords: 0 };
@@ -226,6 +244,8 @@ async function translateText(text, requestedTarget, env, userId) {
     sv:"swedish",uk:"ukrainian",fa:"persian",ur:"urdu",id:"indonesian",vi:"vietnamese",th:"thai",he:"hebrew",bn:"bengali"
   };
   const target = languageNames[targetCode] || targetCode;
+  // Preserve the source verbatim when source and target are already the same language.
+  if (detectedSource && detectedSource === targetCode) return text.trim();
   const quick = quickPhraseTranslation(text, targetCode, containsArabicText);
   if (quick) return quick;
   const translated = [];
@@ -359,6 +379,41 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
       throw new Error("Translation validation failed: a source time reference was omitted");
     }
   }
+}
+
+async function extractImageTextWithMoondream(message, env) {
+  if (!env.AI) throw new Error("Cloudflare AI binding is not configured");
+  const best = message.photo[message.photo.length - 1];
+  const fileInfo = await telegramCall(env, "getFile", { file_id: best.file_id });
+  const filePath = fileInfo.result?.file_path;
+  if (!filePath) throw new Error("Telegram did not return an image path");
+
+  const imageResponse = await fetchWithTimeout(
+    TELEGRAM_API + "/file/bot" + env.BOT_TOKEN + "/" + filePath, {}, 10000
+  );
+  if (!imageResponse.ok) throw new Error("Could not download Telegram image: HTTP " + imageResponse.status);
+  const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
+  if (!imageBytes.length) throw new Error("Downloaded image is empty");
+  if (imageBytes.length > 15 * 1024 * 1024) throw new Error("Image is too large for OCR");
+
+  let binary = "";
+  for (let i = 0; i < imageBytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...imageBytes.subarray(i, i + 0x8000));
+  }
+  const imageData = btoa(binary);
+  const mimeType = (imageResponse.headers.get("content-type") || "image/jpeg").split(";")[0];
+
+  const result = await withTimeout(env.AI.run("@cf/moondream/moondream3.1-9B-A2B", {
+    task: "query",
+    image: "data:" + mimeType + ";base64," + imageData,
+    question: "Transcribe every readable word in this image exactly as written. Preserve the original language, spelling, punctuation, and line breaks. Do not translate, summarize, describe the picture, or guess text that is not visible. Return only the extracted text. If there is no readable text, return an empty response."
+  }), 18000, "Moondream OCR timeout");
+
+  const extracted = String(
+    result?.response || result?.answer || result?.text || result?.description || ""
+  ).trim();
+  if (!extracted || /^(?:no readable text|no text found)$/.test(extracted.toLowerCase())) return "";
+  return extracted;
 }
 
 async function translateImageWithGemini(message, requestedTarget, env, userId) {
@@ -528,14 +583,29 @@ function cloudflareM2MLanguage(code) {
 }
 
 async function translateWithCloudflareAI(text, source, target, env) {
-  const result = await withTimeout(env.AI.run("@cf/meta/m2m100-1.2b", {
-    text, source_lang: source, target_lang: target
-  }), 6500, "Cloudflare AI timeout");
-  const translated = result?.translated_text || result?.translation || "";
-  if (typeof translated !== "string" || !translated.trim()) {
-    throw new Error("Cloudflare AI returned an empty translation");
+  let lastError;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await withTimeout(env.AI.run("@cf/meta/m2m100-1.2b", {
+        text, source_lang: source, target_lang: target
+      }), 9000, "Cloudflare AI timeout");
+      const translated = result?.translated_text || result?.translation || "";
+      if (typeof translated !== "string" || !translated.trim()) {
+        throw new Error("Cloudflare AI returned an empty translation");
+      }
+      return translated.trim();
+    } catch (error) {
+      lastError = error;
+      const reason = String(error?.message || error);
+      const temporary = /429|5\d\d|timeout|overload|temporar|rate.?limit/i.test(reason);
+      if (attempt === 0 && temporary) {
+        await new Promise(resolve => setTimeout(resolve, 350));
+        continue;
+      }
+      throw error;
+    }
   }
-  return translated.trim();
+  throw lastError || new Error("Cloudflare AI translation failed");
 }
 
 async function translateWithGoogle(text, source, target) {
