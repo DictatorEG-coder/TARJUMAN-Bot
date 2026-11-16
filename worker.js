@@ -361,7 +361,7 @@ function mainKeyboard(env) {
     [{text:"📖 طريقة الاستخدام",callback_data:"show_help"},{text:"⚙️ إعداداتي",callback_data:"show_settings"}],
     [{text:"📢 قناة التحديثات",url:UPDATE_CHANNEL_URL}]
   ];
-  const username=String(env.BOT_USERNAME||"").replace(/^@/,"").trim();
+  const username=String(env.BOT_USERNAME||"tarjuman1_Bot").replace(/^@/,"").trim();
   if(username) rows.splice(2,0,[{text:"➕ أضفني إلى مجموعتك",url:"https://t.me/"+username+"?startgroup=true"}]);
   return {inline_keyboard:rows};
 }
