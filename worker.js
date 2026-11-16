@@ -160,7 +160,12 @@ function parseCommand(text) {
   const words = rest.split(/\s+/u);
   let candidate = words[0], prefixWords = 1;
   if (/^(?:إلى|الى)$/.test(candidate)) { candidate = words[1] || ""; prefixWords = 2; }
-  candidate = candidate.normalize("NFC").replace(/[\u064B-\u065F\u0670]/g, "").replace(/^(?:لل|لـ|ل)/u, "").toLowerCase();
+  candidate = candidate.normalize("NFC")
+    .replace(/[\u064B-\u065F\u0670]/g, "")
+    .replace(/^(?:لل|لـ|ل)/u, "")
+    // Ignore punctuation attached to a language name, e.g. "للفرنسية:".
+    .replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, "")
+    .toLowerCase();
   const languages = {
     "العربية":"ar","عربية":"ar","عربي":"ar","arabic":"ar","ar":"ar",
     "الإنجليزية":"en","إنجليزية":"en","انجليزية":"en","إنجليزي":"en","انجليزي":"en","انجليزيه":"en","english":"en","en":"en",
