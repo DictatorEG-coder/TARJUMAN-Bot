@@ -31,8 +31,10 @@ export default {
         let userMessage = "تعذرت معالجة طلبك الآن. حاول مرة أخرى بعد قليل.";
         if (String(error?.message).includes("OCR_SPACE_API_KEY")) {
           userMessage = "ترجمة الصور لم تُفعّل بعد. يلزم إضافة مفتاح OCR_SPACE_API_KEY في إعدادات Cloudflare.";
+        } else if (/All translation providers failed/i.test(String(error?.message))) {
+          userMessage = "تعذرت الترجمة حاليًا لأن خدمات الترجمة المتاحة لا تستجيب. جرّب بعد قليل.";
         } else if (/quota|limit|403|429/i.test(String(error?.message))) {
-          userMessage = "وصلنا إلى حد الاستخدام المجاني لخدمة الترجمة أو قراءة الصور. حاول لاحقًا.";
+          userMessage = "خدمة الترجمة رفضت الطلب مؤقتًا بسبب حدود الاستخدام. حاول لاحقًا.";
         }
         await sendMessage(env, chatId, userMessage, {
           reply_to_message_id: replyId
@@ -156,12 +158,29 @@ async function translateText(text, requestedTarget, env) {
   const translated = [];
 
   for (const chunk of chunks) {
+    const failures = [];
     try {
       translated.push(await translateWithGoogle(chunk, source, target));
-    } catch (googleError) {
-      console.error("Primary translation provider failed:", googleError?.message || googleError);
-      translated.push(await translateWithMyMemory(chunk, source, target, env));
+      continue;
+    } catch (error) {
+      failures.push("Google: " + (error?.message || error));
+      console.error("Google translation failed:", error?.message || error);
     }
+    try {
+      translated.push(await translateWithLibreTranslate(chunk, source, target));
+      continue;
+    } catch (error) {
+      failures.push("LibreTranslate: " + (error?.message || error));
+      console.error("LibreTranslate failed:", error?.message || error);
+    }
+    try {
+      translated.push(await translateWithMyMemory(chunk, source, target, env));
+      continue;
+    } catch (error) {
+      failures.push("MyMemory: " + (error?.message || error));
+      console.error("MyMemory failed:", error?.message || error);
+    }
+    throw new Error("All translation providers failed. " + failures.join(" | "));
   }
   return translated.join("\n");
 }
@@ -182,6 +201,24 @@ async function translateWithGoogle(text, source, target) {
     : "";
   if (!result.trim()) throw new Error("Google translation returned an empty result");
   return result;
+}
+
+async function translateWithLibreTranslate(text, source, target) {
+  const response = await fetch("https://translate.argosopentech.com/translate", {
+    method: "POST",
+    headers: { "content-type": "application/json", "accept": "application/json" },
+    body: JSON.stringify({
+      q: text,
+      source: source === "auto" ? "auto" : source,
+      target
+    })
+  });
+  const body = await response.text();
+  if (!response.ok) throw new Error("LibreTranslate HTTP " + response.status + ": " + body.slice(0, 180));
+  let data;
+  try { data = JSON.parse(body); } catch { throw new Error("LibreTranslate returned invalid JSON"); }
+  if (!data.translatedText) throw new Error(data.error || "LibreTranslate returned no translation");
+  return data.translatedText;
 }
 
 async function translateWithMyMemory(text, source, target, env) {
