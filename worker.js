@@ -342,7 +342,10 @@ function quickPhraseTranslation(text, targetCode, sourceIsArabic) {
     "صباح الخير": { en: "Good morning.", fr: "Bonjour.", de: "Guten Morgen.", es: "Buenos días.", it: "Buongiorno.", tr: "Günaydın.", ru: "Доброе утро.", pt: "Bom dia." },
     "مساء الخير": { en: "Good evening.", fr: "Bonsoir.", de: "Guten Abend.", es: "Buenas noches.", it: "Buonasera.", tr: "İyi akşamlar.", ru: "Добрый вечер.", pt: "Boa noite." },
     "مرحبا": { en: "Hello.", fr: "Bonjour.", de: "Hallo.", es: "Hola.", it: "Ciao.", tr: "Merhaba.", ru: "Здравствуйте.", pt: "Olá." },
-    "شكرا": { en: "Thank you.", fr: "Merci.", de: "Danke.", es: "Gracias.", it: "Grazie.", tr: "Teşekkür ederim.", ru: "Спасибо.", pt: "Obrigado." }
+    "شكرا": { en: "Thank you.", fr: "Merci.", de: "Danke.", es: "Gracias.", it: "Grazie.", tr: "Teşekkür ederim.", ru: "Спасибо.", pt: "Obrigado." },
+    "كيف حالك": { en: "How are you?", fr: "Comment vas-tu ?", de: "Wie geht es dir?", es: "¿Cómo estás?", it: "Come stai?", tr: "Nasılsın?", pt: "Como você está?" },
+    "كيف حالك اليوم": { en: "How are you today?", fr: "Comment vas-tu aujourd'hui ?", de: "Wie geht es dir heute?", es: "¿Cómo estás hoy?", it: "Come stai oggi?", tr: "Bugün nasılsın?", pt: "Como você está hoje?" },
+    "صباح الخير كيف حالك": { en: "Good morning, how are you?", fr: "Bonjour, comment vas-tu ?", de: "Guten Morgen, wie geht es dir?", es: "Buenos días, ¿cómo estás?", it: "Buongiorno, come stai?", tr: "Günaydın, nasılsın?", pt: "Bom dia, como você está?" }
   };
   return phrases[normalized]?.[targetCode] || null;
 }
