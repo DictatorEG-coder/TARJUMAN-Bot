@@ -231,24 +231,32 @@ async function translateText(text, requestedTarget, env, userId) {
   const translated = [];
   for (const chunk of splitUtf8(text, 1100)) {
     const failures = [];
-    // For Arabic input, prefer the dedicated multilingual translation model.
-    if (env.AI && containsArabicText) {
+    // M2M100 is the primary translation engine for every language we can identify.
+    // Gemini is kept as a fallback; optional proofreading is disabled by default to
+    // avoid making every successful translation depend on Gemini quota.
+    const m2mSource = detectSourceCode(chunk);
+    const m2mTarget = targetCode === "zh-CN" ? "zh" : targetCode;
+    if (env.AI && m2mSource) {
       try {
-        let candidate = await translateWithCloudflareAI(chunk, "ar", targetCode, env);
+        const candidate = await translateWithCloudflareAI(chunk, m2mSource, m2mTarget, env);
         assertTranslationLooksValid(chunk, candidate, targetCode);
-        // Use Gemini as a restrained proofreader to catch omissions and awkward wording.
-        // If review fails, keep the already validated M2M100 translation.
-        if (env.GEMINI_API_KEY) {
+        if (env.GEMINI_API_KEY && env.GEMINI_REVIEW_TRANSLATIONS === "true") {
           try {
             const reviewed = await reviewTranslationWithGemini(chunk, candidate, target, targetCode, env);
             assertTranslationLooksValid(chunk, reviewed, targetCode);
-            candidate = reviewed;
+            translated.push(reviewed);
           } catch (reviewError) {
-            console.error("Translation review skipped; keeping M2M100 result:", reviewError?.message || reviewError);
+            console.error("Optional Gemini review skipped; keeping M2M100 result:", reviewError?.message || reviewError);
+            translated.push(candidate);
           }
+        } else {
+          translated.push(candidate);
         }
-        translated.push(candidate); continue;
-      } catch (error) { failures.push("Cloudflare M2M100: " + (error?.message || error)); }
+        continue;
+      } catch (error) {
+        failures.push("Cloudflare M2M100: " + (error?.message || error));
+        console.error("M2M100 failed; trying fallback providers:", error?.message || error);
+      }
     }
     if (env.GEMINI_API_KEY) {
       try {
@@ -261,17 +269,6 @@ async function translateText(text, requestedTarget, env, userId) {
         failures.push("Gemini: " + reason);
         console.error("Gemini failed validation or request; fallback:", reason);
       }
-    }
-    // M2M100 requires an explicit source language. The script-based detector
-    // cannot distinguish Latin-script languages such as French and English,
-    // so never label unknown Latin text as English and feed it to this model.
-    const hasLatinLetters = /[A-Za-zÀ-ÿ]/u.test(chunk);
-    if (env.AI && !containsArabicText && !hasLatinLetters) {
-      try {
-        const candidate = await translateWithCloudflareAI(chunk, detectedSource, target, env);
-        assertTranslationLooksValid(chunk, candidate, targetCode);
-        translated.push(candidate); continue;
-      } catch (error) { failures.push("Cloudflare M2M100: " + (error?.message || error)); }
     }
     try {
       const candidate = await translateWithGoogle(chunk, source, targetCode);
@@ -654,7 +651,36 @@ function detectSourceCode(text) {
   if (/[\u3040-\u30FF]/u.test(text)) return "ja";
   if (/[\u4E00-\u9FFF]/u.test(text)) return "zh";
   if (/[\uAC00-\uD7AF]/u.test(text)) return "ko";
-  return "en";
+
+  // Lightweight lexical detection for common Latin-script languages.
+  // It is intentionally conservative: a wrong source language can be worse
+  // than falling through to an automatic-detection provider.
+  const words = (text.toLowerCase().match(/[\\p{L}]+/gu) || []);
+  const sample = " " + words.join(" ") + " ";
+  const scores = {
+    fr: [" je ", " tu ", " vous ", " nous ", " que ", " qui ", " dans ", " avec ", " mais ", " une ", " des ", " est ", " sont ", " était ", " serait ", " pas ", " pour ", " tout ", " bien ", " finalement ", " parce ", " demain ", " aujourd "],
+    en: [" the ", " and ", " is ", " are ", " was ", " were ", " you ", " your ", " that ", " this ", " with ", " for ", " from ", " have ", " has ", " had ", " but ", " because ", " would ", " could ", " should ", " yesterday ", " tomorrow "],
+    de: [" der ", " die ", " das ", " und ", " ist ", " sind ", " ich ", " nicht ", " mit ", " für ", " ein ", " eine ", " aber ", " weil ", " wird ", " war ", " morgen ", " gestern "],
+    es: [" el ", " la ", " los ", " las ", " y ", " que ", " de ", " en ", " es ", " está ", " pero ", " porque ", " para ", " una ", " como ", " mañana ", " ayer "],
+    it: [" il ", " lo ", " la ", " gli ", " le ", " e ", " che ", " di ", " non ", " sono ", " con ", " per ", " ma ", " perché ", " una ", " domani ", " ieri "],
+    pt: [" o ", " a ", " os ", " as ", " e ", " de ", " que ", " não ", " uma ", " para ", " com ", " mas ", " porque ", " está ", " amanhã ", " ontem "],
+    nl: [" de ", " het ", " een ", " en ", " is ", " zijn ", " niet ", " dat ", " met ", " voor ", " maar ", " omdat ", " ik ", " jij ", " gisteren "],
+    tr: [" ve ", " bir ", " bu ", " şu ", " için ", " değil ", " ama ", " çok ", " ben ", " sen ", " bugün ", " yarın ", " dün "],
+    pl: [" i ", " oraz ", " nie ", " jest ", " są ", " się ", " że ", " dla ", " ale ", " bardzo ", " jutro ", " wczoraj "],
+    sv: [" och ", " att ", " det ", " är ", " jag ", " inte ", " med ", " för ", " men ", " som ", " idag ", " imorgon "]
+  };
+  let best = "en", bestScore = 0;
+  for (const [code, markers] of Object.entries(scores)) {
+    let score = 0;
+    for (const marker of markers) if (sample.includes(marker)) score++;
+    if (score > bestScore) { best = code; bestScore = score; }
+  }
+  // Accent and language-specific characters provide additional evidence.
+  if (/[àâçèéêëîïôùûüÿœ]/iu.test(text) && bestScore < 2) best = "fr";
+  else if (/[ñ¿¡]/u.test(text) && bestScore < 2) best = "es";
+  else if (/[ãõ]/iu.test(text) && bestScore < 2) best = "pt";
+  else if (/[äöß]/iu.test(text) && bestScore < 2) best = "de";
+  return best;
 }
 async function fetchWithTimeout(url,options={},timeoutMs=5000) {
   const controller=new AbortController();
