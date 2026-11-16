@@ -182,23 +182,13 @@ async function translateText(text, requestedTarget, env) {
   const translated = [];
 
   for (const chunk of chunks) {
-    // Gemini is the preferred contextual translation engine when its secret is configured.
+    // Preferred contextual engine.
     if (env.GEMINI_API_KEY) {
       try {
         translated.push(await translateWithGemini(chunk, target, targetCode, env));
         continue;
       } catch (error) {
         console.error("Gemini translation failed; trying fallback providers:", error?.message || error);
-      }
-    }
-
-    // Keep the existing Cloudflare model as the first fallback.
-    if (env.AI) {
-      try {
-        translated.push(await translateWithCloudflareAI(chunk, source, target, env));
-        continue;
-      } catch (error) {
-        console.error("Cloudflare AI translation failed:", error?.message || error);
       }
     }
 
@@ -224,6 +214,18 @@ async function translateText(text, requestedTarget, env) {
       failures.push("MyMemory: " + (error?.message || error));
       console.error("MyMemory failed:", error?.message || error);
     }
+
+    // Preserve the previously working Cloudflare model as the final fallback.
+    if (env.AI) {
+      try {
+        translated.push(await translateWithCloudflareAI(chunk, source, target, env));
+        continue;
+      } catch (error) {
+        failures.push("Cloudflare AI: " + (error?.message || error));
+        console.error("Cloudflare AI translation failed:", error?.message || error);
+      }
+    }
+
     throw new Error("All translation providers failed. " + failures.join(" | "));
   }
   return translated.join("\n");
