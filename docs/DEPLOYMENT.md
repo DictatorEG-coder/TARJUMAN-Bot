@@ -14,8 +14,12 @@
 | BOT_TOKEN | Secret | توكن BotFather |
 | WEBHOOK_SECRET | Secret | سلسلة عشوائية طويلة من أحرف وأرقام |
 | OCR_SPACE_API_KEY | Secret | مفتاح OCR.space المجاني |
+| GEMINI_API_KEY | Secret | مفتاح Gemini API من Google AI Studio (اختياري، لتفعيل المحرك السياقي الأساسي) |
+| GEMINI_MODEL | Variable | اسم النموذج؛ الافتراضي gemini-3.8-flash (اختياري) |
 
 اختياري: أضف MYMEMORY_EMAIL كبريد صالح لرفع حصة MyMemory المجانية المعلنة. ثم أعد نشر Worker.
+
+عند إضافة GEMINI_API_KEY يصبح Gemini المحرك الأول، ثم ينتقل البوت تلقائيًا إلى Cloudflare AI، ثم بقية المحركات الحالية إذا فشل Gemini أو انتهت حصته. لا تضف المفتاح إلا بعد مراجعة شروط الخصوصية: بيانات المستوى المجاني في Gemini قد تُستخدم لتحسين منتجات Google، لذلك لا تستخدمه لترجمة نصوص سرية أو شديدة الحساسية.
 
 ## 3. تفعيل Webhook
 بعد نشر Worker انسخ عنوانه، مثل:
