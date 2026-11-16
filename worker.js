@@ -40,8 +40,12 @@ export default {
       if (chatId) {
         const replyId = message.reply_to_message?.message_id || message.message_id;
         let userMessage = "تعذرت معالجة طلبك الآن. حاول مرة أخرى بعد قليل.";
-        if (String(error?.message).includes("OCR_SPACE_API_KEY")) {
-          userMessage = "ترجمة الصور لم تُفعّل بعد. يلزم إضافة مفتاح OCR_SPACE_API_KEY في إعدادات Cloudflare.";
+        if (/OCR_SPACE_API_KEY/.test(String(error?.message))) {
+          userMessage = "تعذر تشغيل قارئ الصور الاحتياطي؛ مفتاح OCR_SPACE_API_KEY غير مضبوط في Cloudflare.";
+        } else if (/Gemini image HTTP 400|Invalid JSON payload|Unknown name \\"inlineData\\"|Unknown name \\"inline_data\\"/i.test(String(error?.message))) {
+          userMessage = "تعذر على محرك قراءة الصور فهم الطلب. تم تسجيل تفاصيل الخطأ لإصلاحه.";
+        } else if (/Could not download Telegram image|Telegram did not return an image path|Downloaded image is empty/i.test(String(error?.message))) {
+          userMessage = "تعذر تحميل الصورة من تيليجرام. أعد إرسال الصورة ثم جرّب مرة أخرى.";
         } else if (/All translation providers failed/i.test(String(error?.message))) {
           userMessage = "تعذرت الترجمة حاليًا لأن خدمات الترجمة المتاحة لا تستجيب. جرّب بعد قليل.";
         } else if (/quota|limit|403|429/i.test(String(error?.message))) {
@@ -269,7 +273,7 @@ async function translateImageWithGemini(message, requestedTarget, env, userId) {
         systemInstruction: { parts: [{ text: "You are a precise image text translator. Read only text that is actually visible in the image. Preserve names, numbers, order, and meaning. Do not describe the image, guess missing words, or add explanations. If no readable text exists, return exactly: NO_READABLE_TEXT. Return only the translation." }] },
         contents: [{ role: "user", parts: [
           { text: instruction + " Preserve line breaks where useful. Return only the translated text." },
-          { inlineData: { mimeType, data: imageData } }
+          { inline_data: { mime_type: mimeType, data: imageData } }
         ] }],
         generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
       })
