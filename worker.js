@@ -106,15 +106,25 @@ async function handleMessage(message, env) {
 
   if (target.photo?.length) {
     await sendChatAction(env, chatId, "typing");
-    const extracted = await extractImageText(target, env);
-    if (!extracted) {
-      await sendMessage(env, chatId, "لم أتمكن من استخراج نص واضح من الصورة. جرّب صورة أوضح وبجودة أعلى.", {
-        reply_to_message_id: replyId
-      });
-      return;
+    let imageResult = "";
+    if (env.GEMINI_API_KEY) {
+      try {
+        imageResult = await translateImageWithGemini(target, parsed.target, env, message.from?.id);
+      } catch (error) {
+        console.error("Gemini image translation failed; trying OCR fallback:", error?.stack || error);
+      }
     }
-    const result = await translateText(extracted, parsed.target, env, message.from?.id);
-    await sendLongMessage(env, chatId, result, replyId);
+    if (!imageResult) {
+      const extracted = await extractImageText(target, env);
+      if (!extracted) {
+        await sendMessage(env, chatId, "لم أتمكن من استخراج نص واضح من الصورة. جرّب صورة أوضح وبجودة أعلى.", {
+          reply_to_message_id: replyId
+        });
+        return;
+      }
+      imageResult = await translateText(extracted, parsed.target, env, message.from?.id);
+    }
+    await sendLongMessage(env, chatId, imageResult, replyId);
     return;
   }
 
@@ -222,6 +232,60 @@ async function translateText(text, requestedTarget, env, userId) {
   }
   return translated.join("\n");
 }
+async function translateImageWithGemini(message, requestedTarget, env, userId) {
+  const best = message.photo[message.photo.length - 1];
+  const fileInfo = await telegramCall(env, "getFile", { file_id: best.file_id });
+  const filePath = fileInfo.result?.file_path;
+  if (!filePath) throw new Error("Telegram did not return an image path");
+  const imageResponse = await fetchWithTimeout(TELEGRAM_API + "/file/bot" + env.BOT_TOKEN + "/" + filePath, {}, 8000);
+  if (!imageResponse.ok) throw new Error("Could not download Telegram image: HTTP " + imageResponse.status);
+  const imageBytes = new Uint8Array(await imageResponse.arrayBuffer());
+  if (!imageBytes.length) throw new Error("Downloaded image is empty");
+  if (imageBytes.length > 15 * 1024 * 1024) throw new Error("Image is too large for inline Gemini processing");
+  let binary = "";
+  for (let i = 0; i < imageBytes.length; i += 0x8000) {
+    binary += String.fromCharCode(...imageBytes.subarray(i, i + 0x8000));
+  }
+  const imageData = btoa(binary);
+  const mimeType = (imageResponse.headers.get("content-type") || "image/jpeg").split(";")[0];
+  const savedLanguage = requestedTarget === "auto" ? await getUserLanguage(env, userId) : null;
+  const targetCode = requestedTarget === "auto" ? savedLanguage : requestedTarget;
+  const targetNames = {
+    ar:"Arabic",en:"English",fr:"French",de:"German",es:"Spanish",tr:"Turkish",ru:"Russian",
+    it:"Italian",ja:"Japanese","zh-CN":"Simplified Chinese",pt:"Portuguese",hi:"Hindi",nl:"Dutch",
+    pl:"Polish",ko:"Korean",sv:"Swedish",uk:"Ukrainian",fa:"Persian",ur:"Urdu",id:"Indonesian",
+    vi:"Vietnamese",th:"Thai",he:"Hebrew",bn:"Bengali"
+  };
+  const instruction = targetCode
+    ? "Read all legible text in the image and translate it into " + (targetNames[targetCode] || targetCode) + "."
+    : "Detect the language of the text in the image. If it is Arabic, translate it into English. If it is any other language, translate it into Arabic.";
+  const model = env.GEMINI_MODEL || "gemini-3.8-flash";
+  const response = await fetchWithTimeout(
+    "https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: "You are a precise image text translator. Read only text that is actually visible in the image. Preserve names, numbers, order, and meaning. Do not describe the image, guess missing words, or add explanations. If no readable text exists, return exactly: NO_READABLE_TEXT. Return only the translation." }] },
+        contents: [{ role: "user", parts: [
+          { text: instruction + " Preserve line breaks where useful. Return only the translated text." },
+          { inlineData: { mimeType, data: imageData } }
+        ] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+      })
+    },
+    15000
+  );
+  const body = await response.text();
+  if (!response.ok) throw new Error("Gemini image HTTP " + response.status + ": " + body.slice(0, 300));
+  let data;
+  try { data = JSON.parse(body); } catch { throw new Error("Gemini image returned invalid JSON"); }
+  const result = (data.candidates?.[0]?.content?.parts || []).map(part => part.text || "").join("").trim();
+  if (!result) throw new Error("Gemini image returned an empty result");
+  if (/^NO_READABLE_TEXT\.?$/i.test(result)) return "";
+  return result;
+}
+
 async function translateWithGemini(text, target, targetCode, env) {
   const model = env.GEMINI_MODEL || "gemini-3.8-flash";
   const targetLabel = ({
