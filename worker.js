@@ -406,7 +406,11 @@ async function extractImageTextWithMoondream(message, env) {
   const result = await withTimeout(env.AI.run("@cf/moondream/moondream3.1-9B-A2B", {
     task: "query",
     image: "data:" + mimeType + ";base64," + imageData,
-    question: "Transcribe every readable word in this image exactly as written. Preserve the original language, spelling, punctuation, and line breaks. Do not translate, summarize, describe the picture, or guess text that is not visible. Return only the extracted text. If there is no readable text, return an empty response."
+    question: "Transcribe every readable word in this image exactly as written. Preserve the original language, spelling, punctuation, and line breaks. Do not translate, summarize, describe the picture, or guess text that is not visible. Return only the extracted text. If there is no readable text, return an empty response.",
+    reasoning: false,
+    temperature: 0,
+    max_tokens: 4096,
+    stream: false
   }), 18000, "Moondream OCR timeout");
 
   const extracted = String(
