@@ -37,3 +37,11 @@ binding = "AI"
 ```
 
 No model binary, Google ML Kit pack, Telegram token, or provider secret belongs in this repository. Secrets remain configured in Cloudflare Worker settings.
+
+
+## Bundled language resources
+
+- `data/phrasebook.json`: curated exact-match conversational phrases for Arabic, English, and French directions present in the file.
+- `data/chat-abbreviations.json`: curated English chat abbreviations and Arabic colloquial reference entries.
+- `data/arabic-dialect.json`: conservative Egyptian/colloquial-to-standard Arabic normalization pairs used before translation. Ambiguous fillers are intentionally not rewritten mechanically.
+- These are compact project-maintained resources, not complete dictionaries or downloaded parallel corpora. Large external dictionaries and corpora require a separately provisioned data store (for example R2/D1) and license review; they are not embedded in the Worker bundle.
