@@ -1,4 +1,5 @@
 import phrasebook from "./data/phrasebook.json";
+import chatAbbreviations from "./data/chat-abbreviations.json";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -278,8 +279,6 @@ async function translateText(text, requestedTarget, env, userId) {
   const translated = [];
   for (const chunk of splitUtf8(text, 1100)) {
     const failures = [];
-    const glossary = prepareEngineGlossary(chunk, targetCode);
-    const engineInput = glossary.text;
     const restoreAndValidate = candidate => {
       const restored = glossary.restore(candidate);
       return assertTranslationLooksValid(chunk, restored, targetCode);
@@ -287,6 +286,9 @@ async function translateText(text, requestedTarget, env, userId) {
     // Apply the same phrase memory to M2M100 and every fallback provider.
     // Gemini also receives contextual glossary hints in its translation prompt.
     const detectedChunkLanguage = detectSourceCode(chunk);
+    const engineSourceText = expandChatAbbreviations(chunk, detectedChunkLanguage);
+    const glossary = prepareEngineGlossary(engineSourceText, targetCode);
+    const engineInput = glossary.text;
     const m2mSource = cloudflareM2MLanguage(detectedChunkLanguage);
     const m2mTarget = cloudflareM2MLanguage(targetCode);
     if (env.AI && m2mSource && m2mTarget) {
@@ -312,7 +314,7 @@ async function translateText(text, requestedTarget, env, userId) {
     }
     if (env.GEMINI_API_KEY) {
       try {
-        const candidate = await translateWithGemini(chunk, target, targetCode, env);
+        const candidate = await translateWithGemini(engineSourceText, target, targetCode, env);
         translated.push(assertTranslationLooksValid(chunk, candidate, targetCode));
         continue;
       } catch (error) {
@@ -396,6 +398,23 @@ function prepareEngineGlossary(sourceText, targetCode) {
       return result;
     }
   };
+}
+
+function expandChatAbbreviations(text, sourceCode) {
+  if (sourceCode !== "en") return text;
+  const dictionary = chatAbbreviations?.en || {};
+  const safeKeys = new Set([
+    "ASAP", "BTW", "BRB", "FYI", "IDK", "IMO", "IMHO", "TBH", "TTYL",
+    "OMG", "OMW", "NVM", "LMK", "WYD", "WBU", "HBU", "PLS", "THX",
+    "TY", "GTG", "G2G", "AFK", "JK", "IRL"
+  ]);
+  const keys = Object.keys(dictionary).filter(key => safeKeys.has(key));
+  if (!keys.length) return text;
+  const pattern = new RegExp("(^|[^\\p{L}\\p{N}])(" +
+    keys.map(key => key.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\function normalizePhraseKey(value) {")).join("|") +
+    ")(?=$|[^\\p{L}\\p{N}])", "giu");
+  return text.replace(pattern, (match, before, acronym) =>
+    before + dictionary[acronym.toUpperCase()]);
 }
 
 function normalizePhraseKey(value) {
