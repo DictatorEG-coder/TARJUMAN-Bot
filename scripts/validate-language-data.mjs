@@ -8,7 +8,11 @@ for(const [source,targets] of Object.entries(phrasebook)) for(const [target,entr
  for(const [input,output] of Object.entries(entries)) assert.ok(input.trim() && output.trim());
 }
 for(const key of ["BRB","ASAP","BTW","TTYL","IDK"]) assert.ok(abbreviations.en?.[key],"Missing "+key);
+for(const [language, keys] of Object.entries({fr:["MDR","STP","TKT"],es:["XQ","XFA","NTP"],de:["VLLT","MFG"],it:["TVB","CMQ"],pt:["BLZ","OBG"],tr:["SLM","NBR"]})) {
+  for(const key of keys) assert.ok(abbreviations[language]?.[key],"Missing "+language+" abbreviation "+key);
+}
 assert.ok(Object.keys(abbreviations.en||{}).length>=80);
+assert.ok(["fr","es","de","it","pt","tr"].every(language => Object.keys(abbreviations[language]||{}).length>=5));
 assert.ok(Object.keys(dialect).length>=50);
 for(const [input,output] of Object.entries(dialect)) assert.ok(input.trim()&&output.trim());
 assert.equal(phrasebook.en.fr["brb, i will talk to you later"],"Je reviens tout de suite. Je te parlerai plus tard.");
