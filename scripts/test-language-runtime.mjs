@@ -7,12 +7,12 @@ const chatAbbreviations = readJson("../data/chat-abbreviations.json");
 const arabicDialect = readJson("../data/arabic-dialect.json");
 let source = readFileSync(new URL("../worker.js", import.meta.url), "utf8");
 source = source
-  .replace(/^import phrasebook from .*;\\s*$/m, "")
-  .replace(/^import chatAbbreviations from .*;\\s*$/m, "")
-  .replace(/^import arabicDialect from .*;\\s*$/m, "")
+  .replace(/^import phrasebook from .*;\s*$/m, "")
+  .replace(/^import chatAbbreviations from .*;\s*$/m, "")
+  .replace(/^import arabicDialect from .*;\s*$/m, "")
   .replace("export default {", "const worker = {");
 const load = new Function("phrasebook", "chatAbbreviations", "arabicDialect",
-  source + "\\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode };"
+  source + "\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode };"
 );
 const runtime = load(phrasebook, chatAbbreviations, arabicDialect);
 
