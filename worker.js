@@ -342,7 +342,7 @@ function splitUtf8(text, maxBytes = 430) {
 
 async function translateText(text, requestedTarget, env, userId) {
   const containsArabicText = containsArabic(text);
-  const detectedSource = detectSourceCode(text);
+  const detectedSource = detectSourceCode(text) || detectAbbreviationSourceCode(text);
   // Google, LibreTranslate and MyMemory expect ISO language codes (ar), not names (arabic).
   const source = containsArabicText ? "ar" : "auto";
   const savedLanguage = requestedTarget === "auto" ? await getUserLanguage(env, userId) : null;
@@ -358,9 +358,8 @@ async function translateText(text, requestedTarget, env, userId) {
   const quick = quickPhraseTranslation(text, targetCode);
   if (quick) return quick;
   const expandedWholeText = expandChatAbbreviations(text, detectedSource);
-  const hasChatAcronym = new RegExp("(^|[^A-Za-z0-9])(?:ROFLMAO|AFAIK|AFAIR|CUL8R|ICYMI|IDGAF|ASAP|IMHO|TTYL|ROFL|BRUH|FWIW|LMAO|MYOB|NOOB|OMFG|QOTD|TTYS|XOXO|BTW|BRB|FYI|IDK|IMO|TBH|OMG|OMW|NVM|LMK|WYD|WBU|HBU|IRL|ETA|PLS|THX|LOL|GTG|G2G|AFK|ASL|BBL|BBS|BFF|CYA|DIY|EOD|EOM|F2F|FAQ|FTW|GR8|HBD|HMU|IDC|IKR|ILY|IOW|JIC|L8R|MFW|MSG|NBD|NE1|OIC|OOO|PFA|PPL|THO|TIA|TIL|TMI|WTF|WTH|ZZZ|RN|DM|TY|NP|JK|B4|BC|BF|GF|CU|GJ|GL|IC|IM|KK|M8|RU|UR|W8|WB|YW)(?=$|[^A-Za-z0-9])", "i").test(text);
   const expandedQuick = expandedWholeText !== text
-    ? quickPhraseTranslation(expandedWholeText, targetCode, hasChatAcronym ? "en" : null)
+    ? quickPhraseTranslation(expandedWholeText, targetCode, detectedSource)
     : null;
   if (expandedQuick) return expandedQuick;
   const translated = [];
@@ -372,9 +371,8 @@ async function translateText(text, requestedTarget, env, userId) {
     };
     // Apply the same phrase memory to M2M100 and every fallback provider.
     // Gemini also receives contextual glossary hints in its translation prompt.
-    const detectedChunkLanguage = detectSourceCode(chunk);
-    const chunkHasChatAcronym = new RegExp("(^|[^A-Za-z0-9])(?:ROFLMAO|AFAIK|AFAIR|CUL8R|ICYMI|IDGAF|ASAP|IMHO|TTYL|ROFL|BRUH|FWIW|LMAO|MYOB|NOOB|OMFG|QOTD|TTYS|XOXO|BTW|BRB|FYI|IDK|IMO|TBH|OMG|OMW|NVM|LMK|WYD|WBU|HBU|IRL|ETA|PLS|THX|LOL|GTG|G2G|AFK|ASL|BBL|BBS|BFF|CYA|DIY|EOD|EOM|F2F|FAQ|FTW|GR8|HBD|HMU|IDC|IKR|ILY|IOW|JIC|L8R|MFW|MSG|NBD|NE1|OIC|OOO|PFA|PPL|THO|TIA|TIL|TMI|WTF|WTH|ZZZ|RN|DM|TY|NP|JK|B4|BC|BF|GF|CU|GJ|GL|IC|IM|KK|M8|RU|UR|W8|WB|YW)(?=$|[^A-Za-z0-9])", "i").test(chunk);
-    const effectiveSourceLanguage = detectedChunkLanguage || (chunkHasChatAcronym ? "en" : null);
+    const detectedChunkLanguage = detectSourceCode(chunk) || detectAbbreviationSourceCode(chunk);
+    const effectiveSourceLanguage = detectedChunkLanguage;
     const engineSourceText = effectiveSourceLanguage === "ar"
       ? normalizeArabicColloquial(chunk)
       : expandChatAbbreviations(chunk, effectiveSourceLanguage);
@@ -503,9 +501,21 @@ function normalizeArabicColloquial(text) {
   return normalized;
 }
 
+function detectAbbreviationSourceCode(text) {
+  const input = String(text || "");
+  for (const sourceCode of ["en","fr","es","de","it","pt","tr"]) {
+    const dictionary = chatAbbreviations?.[sourceCode] || {};
+    const keys = Object.keys(dictionary).filter(key => /^[A-Z0-9]{2,8}$/.test(key));
+    if (!keys.length) continue;
+    const pattern = new RegExp("(^|[^A-Za-z0-9])(?:" + keys.join("|") + ")(?=$|[^A-Za-z0-9])", "i");
+    if (pattern.test(input)) return sourceCode;
+  }
+  return null;
+}
+
 function expandChatAbbreviations(text, sourceCode) {
-  if (sourceCode && sourceCode !== "en") return text;
-  const dictionary = chatAbbreviations?.en || {};
+  if (!sourceCode) return text;
+  const dictionary = chatAbbreviations?.[sourceCode] || {};
   const keys = Object.keys(dictionary)
     .filter(key => /^[A-Z0-9]{2,8}$/.test(key))
     .sort((a, b) => b.length - a.length);
