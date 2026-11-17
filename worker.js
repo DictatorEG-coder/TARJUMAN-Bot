@@ -595,7 +595,7 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     }
   }
 
-  const negationPresent = /(?:مش|ما|لم|لن|ليس|مفيش|مافيش)/u.test(source);
+    const negationPresent = /(^|[^\p{L}\p{N}])(?:مش|ما|لم|لن|ليس|مفيش|مافيش)(?=$|[^\p{L}\p{N}])/u.test(source);
   const negationPatterns = {
     en: /\b(?:not|no|never|cannot|can't|couldn't|won't|wouldn't|don't|doesn't|didn't|isn't|aren't|wasn't|weren't|nothing|nobody)\b/i,
     fr: /\b(?:ne|n'|pas|jamais|aucun|aucune|rien|personne|impossible)\b/i,
@@ -610,7 +610,7 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     throw new Error("Translation validation failed: source negation may have been omitted");
   }
 
-  const causePresent = /(?:عشان|علشان|بسبب|لأن|لان)/u.test(source);
+    const causePresent = /(^|[^\p{L}\p{N}])(?:عشان|علشان|بسبب|لأن|لان)(?=$|[^\p{L}\p{N}])/u.test(source);
   const causePatterns = {
     en: /\b(?:because|since|due to|owing to|as a result of)\b/i,
     fr: /\b(?:parce que|car|à cause de|en raison de|puisque)\b/i,
