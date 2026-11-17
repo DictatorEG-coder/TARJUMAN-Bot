@@ -28,6 +28,14 @@ assert.equal(
   "أعتذر لأنني تأخرت عليك بسبب الازدحام المروري"
 );
 assert.equal(runtime.expandChatAbbreviations("معلش", "ar"), "معلش");
+assert.equal(runtime.normalizeArabicColloquial("معلش اتأخرت عليك عشان الطريق كان زحم"), "أعتذر لأنني تأخرت عليك بسبب الازدحام المروري");
+assert.equal(runtime.quickPhraseTranslation("معلش اتأخرت عليك عشان الطريق كان زحم", "en"), "Sorry to keep you waiting. There was a lot of traffic.");
+assert.throws(() => runtime.assertKeyMeaningMarkersPreserved(
+  "معلش اتأخرت عليك عشان الطريق كان زحم", "I apologize for being late because the road was dull.", "en"
+), /traffic/i);
+assert.equal(runtime.assertKeyMeaningMarkersPreserved(
+  "معلش اتأخرت عليك عشان الطريق كان زحم", "Sorry to keep you waiting. There was a lot of traffic.", "en"
+), undefined);
 assert.equal(runtime.quickPhraseTranslation("مش هقدر أجي النهارده بسبب الزحمة", "en"), "I won't be able to come today because of the traffic.");
 
 assert.equal(runtime.detectAbbreviationSourceCode("MDR"), "fr");
