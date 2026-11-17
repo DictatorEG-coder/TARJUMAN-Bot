@@ -595,14 +595,14 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     }
   }
 
-  const negationPresent = /(?:\\bمش\\b|\\bمش\\s|\\bما\\s|\\bلم\\b|\\bلن\\b|\\bليس\\b|مفيش|مافيش)/u.test(source);
+  const negationPresent = /(?:مش|ما|لم|لن|ليس|مفيش|مافيش)/u.test(source);
   const negationPatterns = {
-    en: /\\b(?:not|no|never|cannot|can't|couldn't|won't|wouldn't|don't|doesn't|didn't|isn't|aren't|wasn't|weren't|nothing|nobody)\\b/i,
-    fr: /\\b(?:ne|n'|pas|jamais|aucun|aucune|rien|personne|impossible)\\b/i,
-    de: /\\b(?:nicht|kein|keine|keinen|nie|niemand|nichts)\\b/i,
-    es: /\\b(?:no|nunca|ningún|ninguna|nada|nadie)\\b/i,
-    it: /\\b(?:non|mai|nessuno|niente|nessuna)\\b/i,
-    tr: /\\b(?:değil|degil|yok|asla|hiç)\\b/i,
+    en: /\b(?:not|no|never|cannot|can't|couldn't|won't|wouldn't|don't|doesn't|didn't|isn't|aren't|wasn't|weren't|nothing|nobody)\b/i,
+    fr: /\b(?:ne|n'|pas|jamais|aucun|aucune|rien|personne|impossible)\b/i,
+    de: /\b(?:nicht|kein|keine|keinen|nie|niemand|nichts)\b/i,
+    es: /\b(?:no|nunca|ningún|ninguna|nada|nadie)\b/i,
+    it: /\b(?:non|mai|nessuno|niente|nessuna)\b/i,
+    tr: /\b(?:değil|degil|yok|asla|hiç)\b/i,
     ru: /(?:не|нет|никогда|ничего|никто)/i,
     ar: /(?:لا|ليس|لم|لن|ما|مفيش|مافيش)/u
   };
@@ -610,14 +610,14 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     throw new Error("Translation validation failed: source negation may have been omitted");
   }
 
-  const causePresent = /(?:\\bعشان\\b|\\bعلشان\\b|\\bبسبب\\b|\\bلأن\\b|\\bلان\\b)/u.test(source);
+  const causePresent = /(?:عشان|علشان|بسبب|لأن|لان)/u.test(source);
   const causePatterns = {
-    en: /\\b(?:because|since|due to|owing to|as a result of)\\b/i,
-    fr: /\\b(?:parce que|car|à cause de|en raison de|puisque)\\b/i,
-    de: /\\b(?:weil|da|aufgrund|wegen)\\b/i,
-    es: /\\b(?:porque|ya que|debido a|a causa de)\\b/i,
-    it: /\\b(?:perché|poiché|a causa di|a motivo di)\\b/i,
-    tr: /\\b(?:çünkü|cunku|nedeniyle|dolayı)\\b/i,
+    en: /\b(?:because|since|due to|owing to|as a result of)\b/i,
+    fr: /\b(?:parce que|car|à cause de|en raison de|puisque)\b/i,
+    de: /\b(?:weil|da|aufgrund|wegen)\b/i,
+    es: /\b(?:porque|ya que|debido a|a causa de)\b/i,
+    it: /\b(?:perché|poiché|a causa di|a motivo di)\b/i,
+    tr: /\b(?:çünkü|cunku|nedeniyle|dolayı)\b/i,
     ru: /(?:потому что|так как|из-за|вследствие)/i
   };
   if (causePresent && causePatterns[targetCode] && !causePatterns[targetCode].test(result)) {
