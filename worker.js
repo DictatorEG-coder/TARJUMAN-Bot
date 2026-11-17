@@ -63,6 +63,38 @@ export default {
   }
 };
 
+async function handleReactionCommand(message, env) {
+  const target = message.reply_to_message;
+  if (!target) {
+    await sendMessage(env, message.chat.id,
+      "اكتب «تفاعل 👍» ردًا على الرسالة التي تريد التفاعل معها.",
+      { reply_to_message_id: message.message_id }
+    );
+    return;
+  }
+  if (!["group", "supergroup"].includes(message.chat?.type)) {
+    await sendMessage(env, message.chat.id,
+      "ميزة التفاعل بالأمر متاحة داخل المجموعات فقط.",
+      { reply_to_message_id: message.message_id }
+    );
+    return;
+  }
+  try {
+    await telegramCall(env, "setMessageReaction", {
+      chat_id: message.chat.id,
+      message_id: target.message_id,
+      reaction: [{ type: "emoji", emoji: "👍" }],
+      is_big: false
+    });
+  } catch (error) {
+    console.error("Telegram reaction failed:", error?.message || error);
+    await sendMessage(env, message.chat.id,
+      "لم أتمكن من وضع التفاعل. تأكد أن 👍 مسموح في المجموعة وأن البوت يستطيع التفاعل مع الرسائل.",
+      { reply_to_message_id: message.message_id }
+    );
+  }
+}
+
 async function handleMessage(message, env) {
   const commandText = (message.text || message.caption || "").trim();
 
@@ -882,9 +914,9 @@ function languageKeyboard() {
   return {inline_keyboard:rows};
 }
 function helpText() {
-  return "📖 طريقة الاستخدام:\n\n1. حدّد لغة الهدف: «ترجم للإنجليزية» أو «ترجم للفرنسية».\n2. لترجمة رسالة، أرسل الأمر ردًا عليها.\n3. أو اكتب الأمر ثم النص مباشرة، مثل: «ترجم للألمانية Good morning».\n4. يمكنك استخدام صيغ قريبة مثل «ترج» و«ترجمان» و«ترجملي».\n5. لترجمة صورة، أرسل الأمر ردًا عليها مع تحديد اللغة.\n\nمن زر «اختيار لغة الترجمة» يمكنك حفظ لغة افتراضية إذا رغبت.";
-  text += "\\n\\n👍 للتفاعل مع رسالة في المجموعة: رد عليها واكتب «تفاعل 👍».";
+  return "📖 طريقة الاستخدام:\\n\\n1. حدّد لغة الهدف: «ترجم للإنجليزية» أو «ترجم للفرنسية».\\n2. لترجمة رسالة، أرسل الأمر ردًا عليها.\\n3. أو اكتب الأمر ثم النص مباشرة، مثل: «ترجم للألمانية Good morning».\\n4. يمكنك استخدام صيغ قريبة مثل «ترج» و«ترجمان» و«ترجملي».\\n5. لترجمة صورة، أرسل الأمر ردًا عليها مع تحديد اللغة.\\n6. في المجموعات، للتفاعل مع رسالة: رد عليها واكتب «تفاعل 👍».\\n\\nمن زر «اختيار لغة الترجمة» يمكنك حفظ لغة افتراضية إذا رغبت.";
 }
+
 async function getUserLanguage(env,userId) {
   if(!userId||!env.USER_SETTINGS)return null;
   try { const v=await env.USER_SETTINGS.get("lang:"+userId); return v&&v!=="auto"?v:null; }
