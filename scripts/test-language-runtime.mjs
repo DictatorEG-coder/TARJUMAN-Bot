@@ -12,7 +12,7 @@ source = source
   .replace(/^import arabicDialect from .*;\s*$/m, "")
   .replace("export default {", "const worker = {");
 const load = new Function("phrasebook", "chatAbbreviations", "arabicDialect",
-  source + "\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode };"
+  source + "\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode, assertKeyMeaningMarkersPreserved };"
 );
 const runtime = load(phrasebook, chatAbbreviations, arabicDialect);
 
@@ -36,6 +36,17 @@ assert.equal(runtime.expandChatAbbreviations("СПС", "ru"), "спасибо");
 assert.equal(runtime.detectSourceCode("ДЯК"), "uk");
 assert.equal(runtime.expandChatAbbreviations("ДЯК", "uk"), "дякую");
 assert.equal(runtime.expandChatAbbreviations("XFA", "es"), "por favor");
+assert.throws(() => runtime.assertKeyMeaningMarkersPreserved(
+  "معلش اتأخرت عليك عشان الطريق كان زحمة", "I was late.", "en"
+), /apology|traffic|cause/i);
+assert.equal(runtime.assertKeyMeaningMarkersPreserved(
+  "معلش اتأخرت عليك عشان الطريق كان زحمة",
+  "Sorry to keep you waiting. There was a lot of traffic because of the congestion.",
+  "en"
+), undefined);
+assert.throws(() => runtime.assertKeyMeaningMarkersPreserved(
+  "لم أستطع الحضور أمس بسبب اجتماع طارئ", "I attended yesterday because of an emergency meeting.", "en"
+), /negation/i);
 
 const slovenian = "ترجم V francoščini: Dobro jutro, kako si?";
 const slovenianParsed = runtime.parseCommand(slovenian);
