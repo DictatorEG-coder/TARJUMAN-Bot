@@ -228,19 +228,19 @@ async function handleMessage(message, env) {
 
 function parseForeignLanguagePrefix(rest) {
   const aliases = {
-    "in english":"en","english":"en","en anglais":"en","auf englisch":"en","en ingles":"en","in inglese":"en","em ingles":"en","po angielsku":"en",
-    "in french":"fr","french":"fr","en francais":"fr","auf franzosisch":"fr","v francoscini":"fr","in francese":"fr","en frances":"fr","po francusku":"fr",
-    "in german":"de","german":"de","auf deutsch":"de","en allemand":"de","en aleman":"de","in tedesco":"de","po niemiecku":"de",
-    "in spanish":"es","spanish":"es","en espagnol":"es","auf spanisch":"es","en espanol":"es","in spagnolo":"es",
-    "in italian":"it","italian":"it","en italien":"it","auf italienisch":"it","in italiano":"it",
-    "in portuguese":"pt","portuguese":"pt","en portugais":"pt","auf portugiesisch":"pt","em portugues":"pt",
-    "in dutch":"nl","dutch":"nl","en neerlandais":"nl","auf niederlandisch":"nl","in het nederlands":"nl",
-    "in polish":"pl","polish":"pl","en polonais":"pl","auf polnisch":"pl","po polsku":"pl",
-    "in turkish":"tr","turkish":"tr","en turc":"tr","auf turkisch":"tr","turkce":"tr",
-    "in russian":"ru","russian":"ru","en russe":"ru","auf russisch":"ru",
-    "in japanese":"ja","japanese":"ja","en japonais":"ja","auf japanisch":"ja",
-    "in chinese":"zh-CN","chinese":"zh-CN","en chinois":"zh-CN","auf chinesisch":"zh-CN",
-    "in hindi":"hi","hindi":"hi","en hindi":"hi","in korean":"ko","korean":"ko","en coreen":"ko",
+    "in english":"en","english":"en","to english":"en","into english":"en","en anglais":"en","auf englisch":"en","en ingles":"en","in inglese":"en","em ingles":"en","po angielsku":"en",
+    "in french":"fr","french":"fr","to french":"fr","into french":"fr","en francais":"fr","auf franzosisch":"fr","v francoscini":"fr","in francese":"fr","en frances":"fr","po francusku":"fr",
+    "in german":"de","german":"de","to german":"de","into german":"de","auf deutsch":"de","en allemand":"de","en aleman":"de","in tedesco":"de","po niemiecku":"de",
+    "in spanish":"es","spanish":"es","to spanish":"es","into spanish":"es","en espagnol":"es","auf spanisch":"es","en espanol":"es","in spagnolo":"es",
+    "in italian":"it","italian":"it","to italian":"it","into italian":"it","en italien":"it","auf italienisch":"it","in italiano":"it",
+    "in portuguese":"pt","portuguese":"pt","to portuguese":"pt","into portuguese":"pt","en portugais":"pt","auf portugiesisch":"pt","em portugues":"pt",
+    "in dutch":"nl","dutch":"nl","to dutch":"nl","into dutch":"nl","en neerlandais":"nl","auf niederlandisch":"nl","in het nederlands":"nl",
+    "in polish":"pl","polish":"pl","to polish":"pl","into polish":"pl","en polonais":"pl","auf polnisch":"pl","po polsku":"pl",
+    "in turkish":"tr","turkish":"tr","to turkish":"tr","into turkish":"tr","en turc":"tr","auf turkisch":"tr","turkce":"tr",
+    "in russian":"ru","russian":"ru","to russian":"ru","into russian":"ru","en russe":"ru","auf russisch":"ru",
+    "in japanese":"ja","japanese":"ja","to japanese":"ja","into japanese":"ja","en japonais":"ja","auf japanisch":"ja",
+    "in chinese":"zh-CN","chinese":"zh-CN","to chinese":"zh-CN","into chinese":"zh-CN","en chinois":"zh-CN","auf chinesisch":"zh-CN",
+    "in hindi":"hi","hindi":"hi","to hindi":"hi","into hindi":"hi","en hindi":"hi","in korean":"ko","korean":"ko","en coreen":"ko",
     "in persian":"fa","persian":"fa","en persan":"fa","in ukrainian":"uk","ukrainian":"uk","en ukrainien":"uk",
     "in swedish":"sv","swedish":"sv","en suedois":"sv","in arabic":"ar","arabic":"ar","en arabe":"ar","auf arabisch":"ar"
   };
@@ -255,7 +255,7 @@ function parseForeignLanguagePrefix(rest) {
 
 function parseCommand(text) {
   const normalized = text.trim().replace(/^\/translate(?:@\w+)?/i, "ترجم").trim();
-  const commandMatch = normalized.match(/^(?:ترجم(?:ة|لي)?|ترجمان|ترج|ترجا)(?=\s|$)/u);
+  const commandMatch = normalized.match(/^(?:ترجم(?:ة|لي)?|ترجمان|ترج|ترجا|translate|traduire|traduis|traduce|übersetze|traduci|traduz|vertaal|przetłumacz|çevir|переведи|переклади|terjemahkan|dịch|翻訳|翻译|번역해)(?=\s|$)/iu);
   if (!commandMatch) return null;
   const rest = normalized.slice(commandMatch[0].length).trim();
   if (!rest) return { target: "auto", prefixWords: 0 };
@@ -313,7 +313,7 @@ function parseCommand(text) {
 }
 function removeCommandPrefix(text, parsed) {
   const normalized = text.trim().replace(/^\/translate(?:@\w+)?/i, "ترجم").trim();
-  const withoutCommand = normalized.replace(/^(?:ترجم(?:ة|لي)?|ترجمان|ترج|ترجا)(?:\s+|$)/u, "");
+  const withoutCommand = normalized.replace(/^(?:ترجم(?:ة|لي)?|ترجمان|ترج|ترجا|translate|traduire|traduis|traduce|übersetze|traduci|traduz|vertaal|przetłumacz|çevir|переведи|переклади|terjemahkan|dịch|翻訳|翻译|번역해)(?:\s+|$)/iu, "");
   const words = withoutCommand.trim() ? withoutCommand.trim().split(/\s+/u) : [];
   return words.slice(parsed?.prefixWords || 0).join(" ").trim();
 }
