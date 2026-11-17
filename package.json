@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test:data": "node scripts/validate-language-data.mjs"
+    "test:data": "node scripts/validate-language-data.mjs && node scripts/test-language-runtime.mjs",
+    "test:runtime": "node scripts/test-language-runtime.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.0.0"
