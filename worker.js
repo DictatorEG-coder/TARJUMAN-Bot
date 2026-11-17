@@ -505,9 +505,9 @@ function detectAbbreviationSourceCode(text) {
   const input = String(text || "");
   for (const sourceCode of ["en","fr","es","de","it","pt","tr","ru","uk","pl","nl","sv","id","vi"]) {
     const dictionary = chatAbbreviations?.[sourceCode] || {};
-    const keys = Object.keys(dictionary).filter(key => /^[\\p{L}\\p{N}]{2,10}$/u.test(key));
+    const keys = Object.keys(dictionary).filter(key => /^[\p{L}\p{N}]{2,10}$/u.test(key));
     if (!keys.length) continue;
-    const pattern = new RegExp("(^|[^\\\\p{L}\\\\p{N}])(?:" + keys.join("|") + ")(?=$|[^\\\\p{L}\\\\p{N}])", "iu");
+    const pattern = new RegExp("(^|[^\\p{L}\\p{N}])(?:" + keys.join("|") + ")(?=$|[^\\p{L}\\p{N}])", "iu");
     if (pattern.test(input)) return sourceCode;
   }
   return null;
@@ -517,10 +517,10 @@ function expandChatAbbreviations(text, sourceCode) {
   if (!sourceCode) return text;
   const dictionary = chatAbbreviations?.[sourceCode] || {};
   const keys = Object.keys(dictionary)
-    .filter(key => /^[\\p{L}\\p{N}]{2,10}$/u.test(key))
+    .filter(key => /^[\p{L}\p{N}]{2,10}$/u.test(key))
     .sort((a, b) => b.length - a.length);
   if (!keys.length) return text;
-  const pattern = new RegExp("(^|[^\\\\p{L}\\\\p{N}])(" + keys.join("|") + ")(?=$|[^\\\\p{L}\\\\p{N}])", "giu");
+  const pattern = new RegExp("(^|[^\\p{L}\\p{N}])(" + keys.join("|") + ")(?=$|[^\\p{L}\\p{N}])", "giu");
   return text.replace(pattern, (match, before, acronym) =>
     before + (dictionary[acronym.toUpperCase()] || dictionary[acronym.toLowerCase()] || dictionary[acronym]));
 }
