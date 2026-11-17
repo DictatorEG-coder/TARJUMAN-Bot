@@ -32,7 +32,7 @@
       "تحدث ببطء من فضلك": "Parle lentement, s'il te plaît.",
       "كم السعر": "Combien ça coûte ?",
       "صباح الخير كيف حالك هل انت بخير لم اجدك في العمل اليوم": "Bonjour, comment vas-tu ? Est-ce que tout va bien ? Je ne t'ai pas vu au travail aujourd'hui.",
-      "معلش اتأخرت عليك بسبب الشغل": "Désolé de t'avoir fait attendre, j'ai été retardé par le travail.",
+      "معلش اتأخرت عليك بسبب الشغل": "Désolé de t'avoir fait attendre. J'ai été retenu par le travail.",
       "معلش اتأخرت عليك عشان الطريق كان زحمة": "Désolé de t'avoir fait attendre. Il y avait beaucoup de circulation.",
       "معلش اتأخرت عليك بسبب الزحمة": "Désolé de t'avoir fait attendre à cause des embouteillages.",
       "الطريق كان زحمة": "Il y avait beaucoup de circulation.",
@@ -51,7 +51,12 @@
       "أنا في انتظارك": "Je t'attends.",
       "لا تقلق بشأن ذلك": "Ne t'inquiète pas pour ça.",
       "أنا آسف على التأخير": "Je suis désolé pour le retard.",
-      "أعتذر لأنني تأخرت عليك": "Je suis désolé de t'avoir fait attendre."
+      "أعتذر لأنني تأخرت عليك": "Je suis désolé de t'avoir fait attendre.",
+      "وصلت": "Je suis arrivé.",
+      "ممكن تستنى شوية": "Peux-tu attendre un peu ?",
+      "هكلمك بعدين": "Je te parlerai plus tard.",
+      "أنا مشغول دلوقتي": "Je suis occupé en ce moment.",
+      "مش هقدر أجي النهارده": "Je ne pourrai pas venir aujourd'hui."
     },
     "en": {
       "صباح الخير": "Good morning.",
@@ -102,8 +107,13 @@
       "لقد وصلت": "I've arrived.",
       "أنا في انتظارك": "I'm waiting for you.",
       "لا تقلق بشأن ذلك": "Don't worry about that.",
-      "أنا آسف على التأخير": "I'm sorry I'm late.",
-      "أعتذر لأنني تأخرت عليك": "I'm sorry to have kept you waiting."
+      "أنا آسف على التأخير": "I'm sorry for the delay.",
+      "أعتذر لأنني تأخرت عليك": "I'm sorry to have kept you waiting.",
+      "وصلت": "I've arrived.",
+      "ممكن تستنى شوية": "Could you wait a little?",
+      "هكلمك بعدين": "I'll talk to you later.",
+      "أنا مشغول دلوقتي": "I'm busy right now.",
+      "مش هقدر أجي النهارده": "I won't be able to come today."
     }
   },
   "en": {
@@ -147,7 +157,8 @@
       "there was a lot of traffic": "Il y avait beaucoup de circulation.",
       "the traffic was heavy": "La circulation était dense.",
       "i'm sorry i'm late": "Je suis désolé d'être en retard.",
-      "i was held up at work": "J'ai été retenu au travail."
+      "i was held up at work": "J'ai été retenu au travail.",
+      "brb, i will talk to you later": "Je reviens tout de suite. Je te parlerai plus tard."
     },
     "ar": {
       "good morning": "صباح الخير.",
@@ -184,7 +195,8 @@
       "sorry to keep you waiting": "آسف لأنني جعلتك تنتظر.",
       "there was a lot of traffic": "كان هناك ازدحام مروري شديد.",
       "the traffic was heavy": "كانت حركة المرور مزدحمة.",
-      "i'm sorry i'm late": "آسف على تأخري."
+      "i'm sorry i'm late": "آسف على تأخري.",
+      "brb, i will talk to you later": "سأعود حالًا، وسأتحدث معك لاحقًا."
     }
   }
 }
