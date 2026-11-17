@@ -403,16 +403,14 @@ function prepareEngineGlossary(sourceText, targetCode) {
 function expandChatAbbreviations(text, sourceCode) {
   if (sourceCode !== "en") return text;
   const dictionary = chatAbbreviations?.en || {};
-  const safeKeys = new Set([
+  const safeKeys = [
     "ASAP", "BTW", "BRB", "FYI", "IDK", "IMO", "IMHO", "TBH", "TTYL",
     "OMG", "OMW", "NVM", "LMK", "WYD", "WBU", "HBU", "PLS", "THX",
     "TY", "GTG", "G2G", "AFK", "JK", "IRL"
-  ]);
-  const keys = Object.keys(dictionary).filter(key => safeKeys.has(key));
+  ];
+  const keys = safeKeys.filter(key => dictionary[key]);
   if (!keys.length) return text;
-  const pattern = new RegExp("(^|[^\\p{L}\\p{N}])(" +
-    keys.map(key => key.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\function normalizePhraseKey(value) {")).join("|") +
-    ")(?=$|[^\\p{L}\\p{N}])", "giu");
+  const pattern = new RegExp("(^|[^A-Za-z0-9])(" + keys.join("|") + ")(?=$|[^A-Za-z0-9])", "gi");
   return text.replace(pattern, (match, before, acronym) =>
     before + dictionary[acronym.toUpperCase()]);
 }
@@ -420,10 +418,10 @@ function expandChatAbbreviations(text, sourceCode) {
 function normalizePhraseKey(value) {
   return String(value || "")
     .normalize("NFC")
-    .replace(/[\\u064B-\\u065F\\u0670ـ]/gu, "")
+    .replace(/[\u064B-\u065F\u0670ـ]/gu, "")
     .toLowerCase()
-    .replace(/[^\\p{L}\\p{N}\\s]/gu, " ")
-    .replace(/\\s+/gu, " ")
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/gu, " ")
     .trim();
 }
 
