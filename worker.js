@@ -1068,7 +1068,7 @@ function detectSourceCode(text) {
     if (/[ٹڈڑںھ]/u.test(text)) return "ur";
     return "ar";
   }
-  if (/[\u0400-\u04FF]/u.test(text)) return /[іїєґ]/iu.test(text) ? "uk" : "ru";
+  if (/[\u0400-\u04FF]/u.test(text)) return (/[іїєґ]/iu.test(text) || detectAbbreviationSourceCode(text) === "uk") ? "uk" : "ru";
   if (/[\u3040-\u30FF]/u.test(text)) return "ja";
   if (/[\u4E00-\u9FFF]/u.test(text)) return "zh";
   if (/[\uAC00-\uD7AF]/u.test(text)) return "ko";
