@@ -1,3 +1,5 @@
+import phrasebook from "./data/phrasebook.json";
+
 const TELEGRAM_API = "https://api.telegram.org";
 
 export default {
@@ -271,7 +273,7 @@ async function translateText(text, requestedTarget, env, userId) {
   const target = languageNames[targetCode] || targetCode;
   // Preserve the source verbatim when source and target are already the same language.
   if (detectedSource && detectedSource === targetCode) return text.trim();
-  const quick = quickPhraseTranslation(text, targetCode, containsArabicText);
+  const quick = quickPhraseTranslation(text, targetCode);
   if (quick) return quick;
   const translated = [];
   for (const chunk of splitUtf8(text, 1100)) {
@@ -396,19 +398,26 @@ function prepareEngineGlossary(sourceText, targetCode) {
   };
 }
 
-function quickPhraseTranslation(text, targetCode, sourceIsArabic) {
-  if (!sourceIsArabic) return null;
-  const normalized = text.trim().replace(/[؟?!.,،؛:]+$/u, "").replace(/[ًٌٍَُِّْٰـ]/gu, "").replace(/\s+/gu, " ");
-  const phrases = {
-    "صباح الخير": { en: "Good morning.", fr: "Bonjour.", de: "Guten Morgen.", es: "Buenos días.", it: "Buongiorno.", tr: "Günaydın.", ru: "Доброе утро.", pt: "Bom dia." },
-    "مساء الخير": { en: "Good evening.", fr: "Bonsoir.", de: "Guten Abend.", es: "Buenas noches.", it: "Buonasera.", tr: "İyi akşamlar.", ru: "Добрый вечер.", pt: "Boa noite." },
-    "مرحبا": { en: "Hello.", fr: "Bonjour.", de: "Hallo.", es: "Hola.", it: "Ciao.", tr: "Merhaba.", ru: "Здравствуйте.", pt: "Olá." },
-    "شكرا": { en: "Thank you.", fr: "Merci.", de: "Danke.", es: "Gracias.", it: "Grazie.", tr: "Teşekkür ederim.", ru: "Спасибо.", pt: "Obrigado." },
-    "كيف حالك": { en: "How are you?", fr: "Comment vas-tu ?", de: "Wie geht es dir?", es: "¿Cómo estás?", it: "Come stai?", tr: "Nasılsın?", pt: "Como você está?" },
-    "كيف حالك اليوم": { en: "How are you today?", fr: "Comment vas-tu aujourd'hui ?", de: "Wie geht es dir heute?", es: "¿Cómo estás hoy?", it: "Come stai oggi?", tr: "Bugün nasılsın?", pt: "Como você está hoje?" },
-    "صباح الخير كيف حالك": { en: "Good morning, how are you?", fr: "Bonjour, comment vas-tu ?", de: "Guten Morgen, wie geht es dir?", es: "Buenos días, ¿cómo estás?", it: "Buongiorno, come stai?", tr: "Günaydın, nasılsın?", pt: "Bom dia, como você está?" }
-  };
-  return phrases[normalized]?.[targetCode] || null;
+function normalizePhraseKey(value) {
+  return String(value || "")
+    .normalize("NFC")
+    .replace(/[\\u064B-\\u065F\\u0670ـ]/gu, "")
+    .toLowerCase()
+    .replace(/[^\\p{L}\\p{N}\\s]/gu, " ")
+    .replace(/\\s+/gu, " ")
+    .trim();
+}
+
+function quickPhraseTranslation(text, targetCode) {
+  const sourceCode = detectSourceCode(text) || (containsArabic(text) ? "ar" : null);
+  if (!sourceCode) return null;
+  const dictionary = phrasebook?.[sourceCode]?.[targetCode];
+  if (!dictionary) return null;
+  const normalizedInput = normalizePhraseKey(text);
+  for (const [phrase, translation] of Object.entries(dictionary)) {
+    if (normalizePhraseKey(phrase) === normalizedInput) return translation;
+  }
+  return null;
 }
 
 function assertTranslationLooksValid(sourceText, translatedText, targetCode) {
