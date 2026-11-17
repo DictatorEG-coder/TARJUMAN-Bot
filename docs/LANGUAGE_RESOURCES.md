@@ -3,7 +3,7 @@
 The Worker uses several small, complementary resources:
 
 - `phrasebook.json`: exact, high-confidence sentence matches. It is checked before remote translation engines; it is not a general dictionary.
-- `chat-abbreviations.json`: curated chat abbreviations. English, French, Spanish, German, Italian, Portuguese, and Turkish abbreviations are expanded before model translation when the source language is identified.
+- `chat-abbreviations.json`: curated chat abbreviations. English, French, Spanish, German, Italian, Portuguese, Turkish, Russian, Ukrainian, Polish, Dutch, Swedish, Indonesian, and Vietnamese abbreviations are expanded before model translation when the source language is identified.
 - `arabic-dialect.json`: conservative Egyptian/colloquial Arabic normalization pairs. Longer phrases are applied before shorter entries. Context-sensitive fillers such as `معلش`, `تمام`, and `خلاص` are deliberately preserved.
 
 ## Adding entries
