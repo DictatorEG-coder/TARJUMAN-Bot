@@ -605,7 +605,7 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     }
   }
 
-    const negationPresent = /(^|[^\p{L}\p{N}])(?:مش|ما|لم|لن|ليس|مفيش|مافيش)(?=$|[^\p{L}\p{N}])/u.test(source);
+    const negationPresent = /(^|[^\p{L}\p{N}])(?:مش|لم|لن|ليس|مفيش|مافيش)(?=$|[^\p{L}\p{N}])/u.test(source);
   const negationPatterns = {
     en: /\b(?:not|no|never|cannot|can't|couldn't|won't|wouldn't|don't|doesn't|didn't|isn't|aren't|wasn't|weren't|nothing|nobody)\b/i,
     fr: /\b(?:ne|n'|pas|jamais|aucun|aucune|rien|personne|impossible)\b/i,
