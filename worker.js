@@ -228,21 +228,21 @@ async function handleMessage(message, env) {
 
 function parseForeignLanguagePrefix(rest) {
   const aliases = {
-    "in english":"en","english":"en","to english":"en","into english":"en","en anglais":"en","auf englisch":"en","en ingles":"en","in inglese":"en","em ingles":"en","po angielsku":"en",
-    "in french":"fr","french":"fr","to french":"fr","into french":"fr","en francais":"fr","auf franzosisch":"fr","v francoscini":"fr","in francese":"fr","en frances":"fr","po francusku":"fr",
-    "in german":"de","german":"de","to german":"de","into german":"de","auf deutsch":"de","en allemand":"de","en aleman":"de","in tedesco":"de","po niemiecku":"de",
-    "in spanish":"es","spanish":"es","to spanish":"es","into spanish":"es","en espagnol":"es","auf spanisch":"es","en espanol":"es","in spagnolo":"es",
-    "in italian":"it","italian":"it","to italian":"it","into italian":"it","en italien":"it","auf italienisch":"it","in italiano":"it",
-    "in portuguese":"pt","portuguese":"pt","to portuguese":"pt","into portuguese":"pt","en portugais":"pt","auf portugiesisch":"pt","em portugues":"pt",
-    "in dutch":"nl","dutch":"nl","to dutch":"nl","into dutch":"nl","en neerlandais":"nl","auf niederlandisch":"nl","in het nederlands":"nl",
-    "in polish":"pl","polish":"pl","to polish":"pl","into polish":"pl","en polonais":"pl","auf polnisch":"pl","po polsku":"pl",
-    "in turkish":"tr","turkish":"tr","to turkish":"tr","into turkish":"tr","en turc":"tr","auf turkisch":"tr","turkce":"tr",
-    "in russian":"ru","russian":"ru","to russian":"ru","into russian":"ru","en russe":"ru","auf russisch":"ru",
-    "in japanese":"ja","japanese":"ja","to japanese":"ja","into japanese":"ja","en japonais":"ja","auf japanisch":"ja",
-    "in chinese":"zh-CN","chinese":"zh-CN","to chinese":"zh-CN","into chinese":"zh-CN","en chinois":"zh-CN","auf chinesisch":"zh-CN",
-    "in hindi":"hi","hindi":"hi","to hindi":"hi","into hindi":"hi","en hindi":"hi","in korean":"ko","korean":"ko","en coreen":"ko",
-    "in persian":"fa","persian":"fa","en persan":"fa","in ukrainian":"uk","ukrainian":"uk","en ukrainien":"uk",
-    "in swedish":"sv","swedish":"sv","en suedois":"sv","in arabic":"ar","arabic":"ar","en arabe":"ar","auf arabisch":"ar"
+    "in english":"en","english":"en","english language":"en","to english":"en","into english":"en","en anglais":"en","auf englisch":"en","en ingles":"en","in inglese":"en","em ingles":"en","po angielsku":"en",
+    "in french":"fr","french":"fr","francais":"fr","to french":"fr","into french":"fr","en francais":"fr","auf franzosisch":"fr","v francoscini":"fr","in francese":"fr","en frances":"fr","po francusku":"fr",
+    "in german":"de","german":"de","deutsch":"de","to german":"de","into german":"de","auf deutsch":"de","en allemand":"de","en aleman":"de","in tedesco":"de","po niemiecku":"de",
+    "in spanish":"es","spanish":"es","espanol":"es","to spanish":"es","into spanish":"es","en espagnol":"es","auf spanisch":"es","en espanol":"es","in spagnolo":"es",
+    "in italian":"it","italian":"it","italiano":"it","to italian":"it","into italian":"it","en italien":"it","auf italienisch":"it","in italiano":"it",
+    "in portuguese":"pt","portuguese":"pt","portugues":"pt","to portuguese":"pt","into portuguese":"pt","en portugais":"pt","auf portugiesisch":"pt","em portugues":"pt",
+    "in dutch":"nl","dutch":"nl","nederlands":"nl","to dutch":"nl","into dutch":"nl","en neerlandais":"nl","auf niederlandisch":"nl","in het nederlands":"nl",
+    "in polish":"pl","polish":"pl","polski":"pl","to polish":"pl","into polish":"pl","en polonais":"pl","auf polnisch":"pl","po polsku":"pl",
+    "in turkish":"tr","turkish":"tr","turkce":"tr","to turkish":"tr","into turkish":"tr","en turc":"tr","auf turkisch":"tr","turkce":"tr",
+    "in russian":"ru","russian":"ru","русский":"ru","российском":"ru","по-русски":"ru","to russian":"ru","into russian":"ru","en russe":"ru","auf russisch":"ru",
+    "in japanese":"ja","japanese":"ja","日本語":"ja","日本語で":"ja","to japanese":"ja","into japanese":"ja","en japonais":"ja","auf japanisch":"ja",
+    "in chinese":"zh-CN","chinese":"zh-CN","中文":"zh-CN","简体中文":"zh-CN","to chinese":"zh-CN","into chinese":"zh-CN","en chinois":"zh-CN","auf chinesisch":"zh-CN",
+    "in hindi":"hi","hindi":"hi","हिंदी":"hi","हिन्दी":"hi","to hindi":"hi","into hindi":"hi","en hindi":"hi","in korean":"ko","korean":"ko","한국어":"ko","한국어로":"ko","en coreen":"ko",
+    "in persian":"fa","persian":"fa","فارسی":"fa","in urdu":"ur","urdu":"ur","اردو":"ur","in indonesian":"id","indonesian":"id","bahasa indonesia":"id","in vietnamese":"vi","vietnamese":"vi","tieng viet":"vi","in thai":"th","thai":"th","ภาษาไทย":"th","in hebrew":"he","hebrew":"he","עברית":"he","in bengali":"bn","bengali":"bn","বাংলা":"bn","en persan":"fa","in ukrainian":"uk","ukrainian":"uk","українською":"uk","українська":"uk","en ukrainien":"uk",
+    "in swedish":"sv","swedish":"sv","svenska":"sv","på svenska":"sv","en suedois":"sv","in arabic":"ar","arabic":"ar","العربية":"ar","بالعربية":"ar","en arabe":"ar","auf arabisch":"ar"
   };
   const words = String(rest || "").trim().split(/\s+/u).filter(Boolean);
   for (let count=Math.min(4,words.length);count>=1;count--) {
