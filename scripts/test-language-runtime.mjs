@@ -12,9 +12,16 @@ source = source
   .replace(/^import arabicDialect from .*;\s*$/m, "")
   .replace("export default {", "const worker = {");
 const load = new Function("phrasebook", "chatAbbreviations", "arabicDialect",
-  source + "\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode, assertKeyMeaningMarkersPreserved };"
+  source + "\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode, assertKeyMeaningMarkersPreserved, isStandaloneTarjumanCall, TARJUMAN_BANTER_REPLIES };"
 );
 const runtime = load(phrasebook, chatAbbreviations, arabicDialect);
+
+assert.equal(runtime.isStandaloneTarjumanCall("ترجمان"), true);
+assert.equal(runtime.isStandaloneTarjumanCall(" ترجمان! "), true);
+assert.equal(runtime.isStandaloneTarjumanCall("ترجمان من فضلك"), false);
+assert.equal(runtime.isStandaloneTarjumanCall("ترجم للإنجليزية ترجمان"), false);
+assert.ok(runtime.TARJUMAN_BANTER_REPLIES.length >= 12);
+assert.ok(runtime.TARJUMAN_BANTER_REPLIES.every(reply => typeof reply === "string" && reply.length > 8));
 
 const brb = "BRB, I will talk to you later";
 assert.equal(runtime.detectAbbreviationSourceCode(brb), "en");
