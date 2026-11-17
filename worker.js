@@ -938,7 +938,7 @@ function cloudflareM2MLanguage(code) {
     tr:"turkish", ru:"russian", it:"italian", ja:"japanese", zh:"chinese",
     "zh-CN":"chinese", pt:"portuguese", hi:"hindi", nl:"dutch", pl:"polish",
     ko:"korean", sv:"swedish", uk:"ukrainian", fa:"persian", ur:"urdu",
-    id:"indonesian", vi:"vietnamese", th:"thai", he:"hebrew", bn:"bengali"
+    id:"indonesian", vi:"vietnamese", sl:"slovenian", th:"thai", he:"hebrew", bn:"bengali"
   };
   return names[code] || null;
 }
@@ -1117,7 +1117,8 @@ function detectSourceCode(text) {
     nl: [" de ", " het ", " een ", " en ", " is ", " zijn ", " niet ", " dat ", " met ", " voor ", " maar ", " omdat ", " ik ", " jij ", " gisteren "],
     tr: [" ve ", " bir ", " bu ", " şu ", " için ", " değil ", " ama ", " çok ", " ben ", " sen ", " bugün ", " yarın ", " dün "],
     pl: [" i ", " oraz ", " nie ", " jest ", " są ", " się ", " że ", " dla ", " ale ", " bardzo ", " jutro ", " wczoraj "],
-    sv: [" och ", " att ", " det ", " är ", " jag ", " inte ", " med ", " för ", " men ", " som ", " idag ", " imorgon "]
+    sv: [" och ", " att ", " det ", " är ", " jag ", " inte ", " med ", " för ", " men ", " som ", " idag ", " imorgon "],
+    sl: [" dobro ", " jutro ", " kako ", " si ", " sem ", " smo ", " ste ", " hvala ", " prosim ", " danes ", " jutri ", " ne ", " da "]
   };
   let best = null, bestScore = 0;
   for (const [code, markers] of Object.entries(scores)) {
