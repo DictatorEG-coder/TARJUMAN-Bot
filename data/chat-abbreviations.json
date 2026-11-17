@@ -297,5 +297,12 @@
     "NTN": "như thế nào",
     "IB": "nhắn tin",
     "K": "không"
+  },
+  "sl": {
+    "LP": "lep pozdrav",
+    "LPP": "lep pozdrav",
+    "HV": "hvala",
+    "PROSIM": "prosim",
+    "NVM": "ne vem"
   }
 }
