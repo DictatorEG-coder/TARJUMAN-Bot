@@ -1,5 +1,6 @@
 import phrasebook from "./data/phrasebook.json";
 import chatAbbreviations from "./data/chat-abbreviations.json";
+import arabicDialect from "./data/arabic-dialect.json";
 
 const TELEGRAM_API = "https://api.telegram.org";
 
@@ -225,6 +226,33 @@ async function handleMessage(message, env) {
   await sendLongMessage(env, chatId, result, replyId);
 }
 
+function parseForeignLanguagePrefix(rest) {
+  const aliases = {
+    "in english":"en","english":"en","en anglais":"en","auf englisch":"en","en ingles":"en","in inglese":"en","em ingles":"en","po angielsku":"en",
+    "in french":"fr","french":"fr","en francais":"fr","auf franzosisch":"fr","v francoscini":"fr","in francese":"fr","en frances":"fr","po francusku":"fr",
+    "in german":"de","german":"de","auf deutsch":"de","en allemand":"de","en aleman":"de","in tedesco":"de","po niemiecku":"de",
+    "in spanish":"es","spanish":"es","en espagnol":"es","auf spanisch":"es","en espanol":"es","in spagnolo":"es",
+    "in italian":"it","italian":"it","en italien":"it","auf italienisch":"it","in italiano":"it",
+    "in portuguese":"pt","portuguese":"pt","en portugais":"pt","auf portugiesisch":"pt","em portugues":"pt",
+    "in dutch":"nl","dutch":"nl","en neerlandais":"nl","auf niederlandisch":"nl","in het nederlands":"nl",
+    "in polish":"pl","polish":"pl","en polonais":"pl","auf polnisch":"pl","po polsku":"pl",
+    "in turkish":"tr","turkish":"tr","en turc":"tr","auf turkisch":"tr","turkce":"tr",
+    "in russian":"ru","russian":"ru","en russe":"ru","auf russisch":"ru",
+    "in japanese":"ja","japanese":"ja","en japonais":"ja","auf japanisch":"ja",
+    "in chinese":"zh-CN","chinese":"zh-CN","en chinois":"zh-CN","auf chinesisch":"zh-CN",
+    "in hindi":"hi","hindi":"hi","en hindi":"hi","in korean":"ko","korean":"ko","en coreen":"ko",
+    "in persian":"fa","persian":"fa","en persan":"fa","in ukrainian":"uk","ukrainian":"uk","en ukrainien":"uk",
+    "in swedish":"sv","swedish":"sv","en suedois":"sv","in arabic":"ar","arabic":"ar","en arabe":"ar","auf arabisch":"ar"
+  };
+  const words = String(rest || "").trim().split(/\s+/u).filter(Boolean);
+  for (let count=Math.min(4,words.length);count>=1;count--) {
+    const candidate=words.slice(0,count).join(" ").replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu,"")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+    if (aliases[candidate]) return {target:aliases[candidate],prefixWords:count};
+  }
+  return null;
+}
+
 function parseCommand(text) {
   const normalized = text.trim().replace(/^\/translate(?:@\w+)?/i, "ترجم").trim();
   const commandMatch = normalized.match(/^(?:ترجم(?:ة|لي)?|ترجمان|ترج|ترجا)(?=\s|$)/u);
@@ -232,6 +260,8 @@ function parseCommand(text) {
   const rest = normalized.slice(commandMatch[0].length).trim();
   if (!rest) return { target: "auto", prefixWords: 0 };
   const words = rest.split(/\s+/u);
+  const foreignPrefix = parseForeignLanguagePrefix(rest);
+  if (foreignPrefix) return foreignPrefix;
   let candidate = words[0], prefixWords = 1;
   if (/^(?:إلى|الى)$/.test(candidate)) { candidate = words[1] || ""; prefixWords = 2; }
   candidate = candidate.normalize("NFC")
@@ -328,8 +358,9 @@ async function translateText(text, requestedTarget, env, userId) {
   const quick = quickPhraseTranslation(text, targetCode);
   if (quick) return quick;
   const expandedWholeText = expandChatAbbreviations(text, detectedSource);
+  const hasChatAcronym = new RegExp("(^|[^A-Za-z0-9])(?:ROFLMAO|AFAIK|AFAIR|CUL8R|ICYMI|IDGAF|ASAP|IMHO|TTYL|ROFL|BRUH|FWIW|LMAO|MYOB|NOOB|OMFG|QOTD|TTYS|XOXO|BTW|BRB|FYI|IDK|IMO|TBH|OMG|OMW|NVM|LMK|WYD|WBU|HBU|IRL|ETA|PLS|THX|LOL|GTG|G2G|AFK|ASL|BBL|BBS|BFF|CYA|DIY|EOD|EOM|F2F|FAQ|FTW|GR8|HBD|HMU|IDC|IKR|ILY|IOW|JIC|L8R|MFW|MSG|NBD|NE1|OIC|OOO|PFA|PPL|THO|TIA|TIL|TMI|WTF|WTH|ZZZ|RN|DM|TY|NP|JK|B4|BC|BF|GF|CU|GJ|GL|IC|IM|KK|M8|RU|UR|W8|WB|YW)(?=$|[^A-Za-z0-9])", "i").test(text);
   const expandedQuick = expandedWholeText !== text
-    ? quickPhraseTranslation(expandedWholeText, targetCode)
+    ? quickPhraseTranslation(expandedWholeText, targetCode, hasChatAcronym ? "en" : null)
     : null;
   if (expandedQuick) return expandedQuick;
   const translated = [];
@@ -342,12 +373,14 @@ async function translateText(text, requestedTarget, env, userId) {
     // Apply the same phrase memory to M2M100 and every fallback provider.
     // Gemini also receives contextual glossary hints in its translation prompt.
     const detectedChunkLanguage = detectSourceCode(chunk);
-    const engineSourceText = detectedChunkLanguage === "ar"
+    const chunkHasChatAcronym = new RegExp("(^|[^A-Za-z0-9])(?:ROFLMAO|AFAIK|AFAIR|CUL8R|ICYMI|IDGAF|ASAP|IMHO|TTYL|ROFL|BRUH|FWIW|LMAO|MYOB|NOOB|OMFG|QOTD|TTYS|XOXO|BTW|BRB|FYI|IDK|IMO|TBH|OMG|OMW|NVM|LMK|WYD|WBU|HBU|IRL|ETA|PLS|THX|LOL|GTG|G2G|AFK|ASL|BBL|BBS|BFF|CYA|DIY|EOD|EOM|F2F|FAQ|FTW|GR8|HBD|HMU|IDC|IKR|ILY|IOW|JIC|L8R|MFW|MSG|NBD|NE1|OIC|OOO|PFA|PPL|THO|TIA|TIL|TMI|WTF|WTH|ZZZ|RN|DM|TY|NP|JK|B4|BC|BF|GF|CU|GJ|GL|IC|IM|KK|M8|RU|UR|W8|WB|YW)(?=$|[^A-Za-z0-9])", "i").test(chunk);
+    const effectiveSourceLanguage = detectedChunkLanguage || (chunkHasChatAcronym ? "en" : null);
+    const engineSourceText = effectiveSourceLanguage === "ar"
       ? normalizeArabicColloquial(chunk)
-      : expandChatAbbreviations(chunk, detectedChunkLanguage);
+      : expandChatAbbreviations(chunk, effectiveSourceLanguage);
     const glossary = prepareEngineGlossary(engineSourceText, targetCode);
     const engineInput = glossary.text;
-    const m2mSource = cloudflareM2MLanguage(detectedChunkLanguage);
+    const m2mSource = cloudflareM2MLanguage(effectiveSourceLanguage);
     const m2mTarget = cloudflareM2MLanguage(targetCode);
     if (env.AI && m2mSource && m2mTarget) {
       try {
@@ -459,46 +492,19 @@ function prepareEngineGlossary(sourceText, targetCode) {
 }
 
 function normalizeArabicColloquial(text) {
-  // Conservative dialect normalization for forms with stable, low-risk meanings.
-  // Ambiguous expressions such as "معلش", "تمام", and "خلاص" are deliberately
-  // preserved so context-sensitive engines can interpret them.
-  const replacements = [
-    [/\\bازيك\\b/gu, "كيف حالك"],
-    [/عامل\\s+ايه/gu, "كيف حالك"],
-    [/عاملة\\s+ايه/gu, "كيف حالك"],
-    [/فينك/gu, "أين أنت"],
-    [/امتى/gu, "متى"],
-    [/ليه/gu, "لماذا"],
-    [/ازاي/gu, "كيف"],
-    [/دلوقتي/gu, "الآن"],
-    [/دلوقت/gu, "الآن"],
-    [/بكره/gu, "غدًا"],
-    [/بكرة/gu, "غدًا"],
-    [/امبارح/gu, "أمس"],
-    [/مبارح/gu, "أمس"],
-    [/عشان/gu, "لأن"],
-    [/علشان/gu, "لأن"],
-    [/كده/gu, "هكذا"],
-    [/كدا/gu, "هكذا"],
-    [/أوي/gu, "جدًا"],
-    [/اوي/gu, "جدًا"],
-    [/مفيش/gu, "لا يوجد"],
-    [/مش\\s+قادر/gu, "غير قادر"],
-    [/مش\\s+عارف/gu, "لا أعرف"],
-    [/مش\\s+فاهم/gu, "لا أفهم"],
-    [/عايز/gu, "أريد"],
-    [/عاوز/gu, "أريد"],
-    [/عايزة/gu, "أريد"],
-    [/محتاج/gu, "أحتاج"],
-    [/لسه/gu, "ما زال"]
-  ];
   let normalized = String(text || "");
-  for (const [pattern, replacement] of replacements) normalized = normalized.replace(pattern, replacement);
+  const entries = Object.entries(arabicDialect || {})
+    .filter(([phrase, replacement]) => phrase && replacement && phrase !== replacement && !["معلش","تمام","خلاص"].includes(phrase))
+    .sort((a,b) => b[0].length-a[0].length);
+  for (const [phrase, replacement] of entries) {
+    const pattern = new RegExp("(^|[^\\p{L}\\p{N}])" + phrase + "(?=$|[^\\p{L}\\p{N}])", "gu");
+    normalized = normalized.replace(pattern, (match,before) => before + replacement);
+  }
   return normalized;
 }
 
 function expandChatAbbreviations(text, sourceCode) {
-  if (sourceCode !== "en") return text;
+  if (sourceCode && sourceCode !== "en") return text;
   const dictionary = chatAbbreviations?.en || {};
   const keys = Object.keys(dictionary)
     .filter(key => /^[A-Z0-9]{2,8}$/.test(key))
@@ -519,8 +525,8 @@ function normalizePhraseKey(value) {
     .trim();
 }
 
-function quickPhraseTranslation(text, targetCode) {
-  const sourceCode = detectSourceCode(text) || (containsArabic(text) ? "ar" : null);
+function quickPhraseTranslation(text, targetCode, sourceHint = null) {
+  const sourceCode = sourceHint || detectSourceCode(text) || (containsArabic(text) ? "ar" : null);
   if (!sourceCode) return null;
   const dictionary = phrasebook?.[sourceCode]?.[targetCode];
   if (!dictionary) return null;
