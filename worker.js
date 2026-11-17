@@ -98,7 +98,7 @@ async function handleReactionCommand(message, env) {
 async function handleMessage(message, env) {
   const commandText = (message.text || message.caption || "").trim();
 
-  if (/^\/?(?:تفاعل|فاعل)(?:\s+👍)?(?:@\w+)?$/u.test(commandText)) {
+  if (/^\/?(?:تفاعل|فاعل|react)(?:@\w+)?(?:\s+👍)?$/iu.test(commandText)) {
     await handleReactionCommand(message, env);
     return;
   }
