@@ -99,8 +99,9 @@ async function handleReactionCommand(message, env, requestedEmoji) {
       is_big: false
     });
   } catch (error) {
-    console.error("Telegram reaction failed:", error?.message || error);
-    await sendMessage(env, message.chat.id, "لم أتمكن من وضع هذا التفاعل. تأكد أن الإيموجي مسموح ضمن تفاعلات المجموعة.", {
+    const reason = String(error?.message || "Unknown Telegram error").slice(0, 220);
+    console.error("Telegram reaction failed:", reason);
+    await sendMessage(env, message.chat.id, "فشل التفاعل من Telegram: " + reason, {
       reply_to_message_id: message.message_id
     });
   }
