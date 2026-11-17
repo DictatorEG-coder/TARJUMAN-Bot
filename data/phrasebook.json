@@ -31,7 +31,27 @@
       "لا أفهم": "Je ne comprends pas.",
       "تحدث ببطء من فضلك": "Parle lentement, s'il te plaît.",
       "كم السعر": "Combien ça coûte ?",
-      "صباح الخير كيف حالك هل انت بخير لم اجدك في العمل اليوم": "Bonjour, comment vas-tu ? Est-ce que tout va bien ? Je ne t'ai pas vu au travail aujourd'hui."
+      "صباح الخير كيف حالك هل انت بخير لم اجدك في العمل اليوم": "Bonjour, comment vas-tu ? Est-ce que tout va bien ? Je ne t'ai pas vu au travail aujourd'hui.",
+      "معلش اتأخرت عليك بسبب الشغل": "Désolé de t'avoir fait attendre, j'ai été retardé par le travail.",
+      "معلش اتأخرت عليك عشان الطريق كان زحمة": "Désolé de t'avoir fait attendre. Il y avait beaucoup de circulation.",
+      "معلش اتأخرت عليك بسبب الزحمة": "Désolé de t'avoir fait attendre à cause des embouteillages.",
+      "الطريق كان زحمة": "Il y avait beaucoup de circulation.",
+      "هكلمك لما اوصل المحطة": "Je t'appellerai quand j'arriverai à la gare.",
+      "سأتصل بك عندما أصل إلى المحطة": "Je t'appellerai quand j'arriverai à la gare.",
+      "سأذهب إلى المستشفى غدا لأن لدي موعدا مع الطبيب": "J'irai à l'hôpital demain parce que j'ai rendez-vous chez le médecin.",
+      "لم أستطع الحضور أمس بسبب اجتماع طارئ في المستشفى": "Je n'ai pas pu venir hier à cause d'une réunion urgente à l'hôpital.",
+      "أنا متأخر بسبب العمل": "Je suis en retard à cause du travail.",
+      "سأعود حالا": "Je reviens tout de suite.",
+      "سأعود بعد قليل": "Je reviens dans un instant.",
+      "هل يمكنك الانتظار قليلا": "Peux-tu attendre un peu ?",
+      "سأتحدث معك لاحقا": "Je te parlerai plus tard.",
+      "سأراك غدا": "Je te verrai demain.",
+      "أنا في الطريق": "Je suis en route.",
+      "لقد وصلت": "Je suis arrivé.",
+      "أنا في انتظارك": "Je t'attends.",
+      "لا تقلق بشأن ذلك": "Ne t'inquiète pas pour ça.",
+      "أنا آسف على التأخير": "Je suis désolé pour le retard.",
+      "أعتذر لأنني تأخرت عليك": "Je suis désolé de t'avoir fait attendre."
     },
     "en": {
       "صباح الخير": "Good morning.",
@@ -63,7 +83,27 @@
       "هل يمكنك مساعدتي": "Can you help me?",
       "لا أفهم": "I don't understand.",
       "تحدث ببطء من فضلك": "Please speak slowly.",
-      "كم السعر": "How much is it?"
+      "كم السعر": "How much is it?",
+      "معلش اتأخرت عليك بسبب الشغل": "Sorry to keep you waiting. I was held up at work.",
+      "معلش اتأخرت عليك عشان الطريق كان زحمة": "Sorry to keep you waiting. There was a lot of traffic.",
+      "معلش اتأخرت عليك بسبب الزحمة": "Sorry to keep you waiting because of the traffic.",
+      "الطريق كان زحمة": "There was a lot of traffic.",
+      "هكلمك لما اوصل المحطة": "I'll call you when I get to the station.",
+      "سأتصل بك عندما أصل إلى المحطة": "I'll call you when I arrive at the station.",
+      "سأذهب إلى المستشفى غدا لأن لدي موعدا مع الطبيب": "I'll go to the hospital tomorrow because I have an appointment with the doctor.",
+      "لم أستطع الحضور أمس بسبب اجتماع طارئ في المستشفى": "I couldn't attend yesterday because of an emergency meeting at the hospital.",
+      "أنا متأخر بسبب العمل": "I'm late because of work.",
+      "سأعود حالا": "I'll be right back.",
+      "سأعود بعد قليل": "I'll be back in a little while.",
+      "هل يمكنك الانتظار قليلا": "Can you wait a little?",
+      "سأتحدث معك لاحقا": "I'll talk to you later.",
+      "سأراك غدا": "I'll see you tomorrow.",
+      "أنا في الطريق": "I'm on my way.",
+      "لقد وصلت": "I've arrived.",
+      "أنا في انتظارك": "I'm waiting for you.",
+      "لا تقلق بشأن ذلك": "Don't worry about that.",
+      "أنا آسف على التأخير": "I'm sorry I'm late.",
+      "أعتذر لأنني تأخرت عليك": "I'm sorry to have kept you waiting."
     }
   },
   "en": {
@@ -97,7 +137,17 @@
       "i'll be back tomorrow": "Je reviendrai demain.",
       "have a nice day": "Bonne journée.",
       "i don't understand": "Je ne comprends pas.",
-      "can you help me?": "Peux-tu m'aider ?"
+      "can you help me?": "Peux-tu m'aider ?",
+      "be right back, i will talk to you later": "Je reviens tout de suite. Je te parlerai plus tard.",
+      "be right back, i'll talk to you later": "Je reviens tout de suite. Je te parlerai plus tard.",
+      "i will call you when i arrive at the station": "Je t'appellerai quand j'arriverai à la gare.",
+      "i will talk to you later": "Je te parlerai plus tard.",
+      "i'll talk to you later": "Je te parlerai plus tard.",
+      "sorry to keep you waiting": "Désolé de t'avoir fait attendre.",
+      "there was a lot of traffic": "Il y avait beaucoup de circulation.",
+      "the traffic was heavy": "La circulation était dense.",
+      "i'm sorry i'm late": "Je suis désolé d'être en retard.",
+      "i was held up at work": "J'ai été retenu au travail."
     },
     "ar": {
       "good morning": "صباح الخير.",
@@ -127,7 +177,14 @@
       "i'll be back tomorrow": "سأعود غدًا.",
       "have a nice day": "أتمنى لك يومًا سعيدًا.",
       "i don't understand": "لا أفهم.",
-      "can you help me?": "هل يمكنك مساعدتي؟"
+      "can you help me?": "هل يمكنك مساعدتي؟",
+      "be right back, i will talk to you later": "سأعود حالًا، وسأتحدث معك لاحقًا.",
+      "i will call you when i arrive at the station": "سأتصل بك عندما أصل إلى المحطة.",
+      "i will talk to you later": "سأتحدث معك لاحقًا.",
+      "sorry to keep you waiting": "آسف لأنني جعلتك تنتظر.",
+      "there was a lot of traffic": "كان هناك ازدحام مروري شديد.",
+      "the traffic was heavy": "كانت حركة المرور مزدحمة.",
+      "i'm sorry i'm late": "آسف على تأخري."
     }
   }
 }
