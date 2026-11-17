@@ -342,7 +342,9 @@ async function translateText(text, requestedTarget, env, userId) {
     // Apply the same phrase memory to M2M100 and every fallback provider.
     // Gemini also receives contextual glossary hints in its translation prompt.
     const detectedChunkLanguage = detectSourceCode(chunk);
-    const engineSourceText = expandChatAbbreviations(chunk, detectedChunkLanguage);
+    const engineSourceText = detectedChunkLanguage === "ar"
+      ? normalizeArabicColloquial(chunk)
+      : expandChatAbbreviations(chunk, detectedChunkLanguage);
     const glossary = prepareEngineGlossary(engineSourceText, targetCode);
     const engineInput = glossary.text;
     const m2mSource = cloudflareM2MLanguage(detectedChunkLanguage);
@@ -454,6 +456,45 @@ function prepareEngineGlossary(sourceText, targetCode) {
       return result;
     }
   };
+}
+
+function normalizeArabicColloquial(text) {
+  // Conservative dialect normalization for forms with stable, low-risk meanings.
+  // Ambiguous expressions such as "معلش", "تمام", and "خلاص" are deliberately
+  // preserved so context-sensitive engines can interpret them.
+  const replacements = [
+    [/\\bازيك\\b/gu, "كيف حالك"],
+    [/عامل\\s+ايه/gu, "كيف حالك"],
+    [/عاملة\\s+ايه/gu, "كيف حالك"],
+    [/فينك/gu, "أين أنت"],
+    [/امتى/gu, "متى"],
+    [/ليه/gu, "لماذا"],
+    [/ازاي/gu, "كيف"],
+    [/دلوقتي/gu, "الآن"],
+    [/دلوقت/gu, "الآن"],
+    [/بكره/gu, "غدًا"],
+    [/بكرة/gu, "غدًا"],
+    [/امبارح/gu, "أمس"],
+    [/مبارح/gu, "أمس"],
+    [/عشان/gu, "لأن"],
+    [/علشان/gu, "لأن"],
+    [/كده/gu, "هكذا"],
+    [/كدا/gu, "هكذا"],
+    [/أوي/gu, "جدًا"],
+    [/اوي/gu, "جدًا"],
+    [/مفيش/gu, "لا يوجد"],
+    [/مش\\s+قادر/gu, "غير قادر"],
+    [/مش\\s+عارف/gu, "لا أعرف"],
+    [/مش\\s+فاهم/gu, "لا أفهم"],
+    [/عايز/gu, "أريد"],
+    [/عاوز/gu, "أريد"],
+    [/عايزة/gu, "أريد"],
+    [/محتاج/gu, "أحتاج"],
+    [/لسه/gu, "ما زال"]
+  ];
+  let normalized = String(text || "");
+  for (const [pattern, replacement] of replacements) normalized = normalized.replace(pattern, replacement);
+  return normalized;
 }
 
 function expandChatAbbreviations(text, sourceCode) {
