@@ -514,7 +514,7 @@ function detectAbbreviationSourceCode(text) {
 }
 
 function expandChatAbbreviations(text, sourceCode) {
-  if (!sourceCode) return text;
+  if (!["en","fr","es","de","it","pt","tr","ru","uk","pl","nl","sv","id","vi"].includes(sourceCode)) return text;
   const dictionary = chatAbbreviations?.[sourceCode] || {};
   const keys = Object.keys(dictionary)
     .filter(key => /^[\p{L}\p{N}]{2,10}$/u.test(key))
