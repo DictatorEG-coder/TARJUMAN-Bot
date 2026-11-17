@@ -594,6 +594,35 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
       throw new Error("Translation validation failed: a source time reference was omitted");
     }
   }
+
+  const negationPresent = /(?:\\bمش\\b|\\bمش\\s|\\bما\\s|\\bلم\\b|\\bلن\\b|\\bليس\\b|مفيش|مافيش)/u.test(source);
+  const negationPatterns = {
+    en: /\\b(?:not|no|never|cannot|can't|couldn't|won't|wouldn't|don't|doesn't|didn't|isn't|aren't|wasn't|weren't|nothing|nobody)\\b/i,
+    fr: /\\b(?:ne|n'|pas|jamais|aucun|aucune|rien|personne|impossible)\\b/i,
+    de: /\\b(?:nicht|kein|keine|keinen|nie|niemand|nichts)\\b/i,
+    es: /\\b(?:no|nunca|ningún|ninguna|nada|nadie)\\b/i,
+    it: /\\b(?:non|mai|nessuno|niente|nessuna)\\b/i,
+    tr: /\\b(?:değil|degil|yok|asla|hiç)\\b/i,
+    ru: /(?:не|нет|никогда|ничего|никто)/i,
+    ar: /(?:لا|ليس|لم|لن|ما|مفيش|مافيش)/u
+  };
+  if (negationPresent && negationPatterns[targetCode] && !negationPatterns[targetCode].test(result)) {
+    throw new Error("Translation validation failed: source negation may have been omitted");
+  }
+
+  const causePresent = /(?:\\bعشان\\b|\\bعلشان\\b|\\bبسبب\\b|\\bلأن\\b|\\bلان\\b)/u.test(source);
+  const causePatterns = {
+    en: /\\b(?:because|since|due to|owing to|as a result of)\\b/i,
+    fr: /\\b(?:parce que|car|à cause de|en raison de|puisque)\\b/i,
+    de: /\\b(?:weil|da|aufgrund|wegen)\\b/i,
+    es: /\\b(?:porque|ya que|debido a|a causa de)\\b/i,
+    it: /\\b(?:perché|poiché|a causa di|a motivo di)\\b/i,
+    tr: /\\b(?:çünkü|cunku|nedeniyle|dolayı)\\b/i,
+    ru: /(?:потому что|так как|из-за|вследствие)/i
+  };
+  if (causePresent && causePatterns[targetCode] && !causePatterns[targetCode].test(result)) {
+    throw new Error("Translation validation failed: source cause may have been omitted");
+  }
 }
 
 async function extractImageTextWithMoondream(message, env) {
@@ -908,7 +937,7 @@ async function translateWithGoogle(text, source, target) {
     dt: "t",
     q: text
   });
-  const response = await fetchWithTimeout("https://translate.googleapis.com/translate_a/single?" + params.toString(), {}, 4500);
+  const response = await fetchWithRetry("https://translate.googleapis.com/translate_a/single?" + params.toString(), {}, 4500, 2);
   if (!response.ok) throw new Error("Google translation HTTP " + response.status);
   const data = await response.json();
   const result = Array.isArray(data?.[0])
@@ -919,7 +948,7 @@ async function translateWithGoogle(text, source, target) {
 }
 
 async function translateWithLibreTranslate(text, source, target) {
-  const response = await fetchWithTimeout("https://translate.argosopentech.com/translate", {
+  const response = await fetchWithRetry("https://translate.argosopentech.com/translate", {
     method: "POST",
     headers: { "content-type": "application/json", "accept": "application/json" },
     body: JSON.stringify({
@@ -927,7 +956,7 @@ async function translateWithLibreTranslate(text, source, target) {
       source: source === "auto" ? "auto" : source,
       target
     })
-  }, 4500);
+  }, 4500, 2);
   const body = await response.text();
   if (!response.ok) throw new Error("LibreTranslate HTTP " + response.status + ": " + body.slice(0, 180));
   let data;
@@ -942,7 +971,7 @@ async function translateWithMyMemory(text, source, target, env) {
     langpair: (source === "auto" ? "autodetect" : source) + "|" + target
   });
   if (env.MYMEMORY_EMAIL) params.set("de", env.MYMEMORY_EMAIL);
-  const response = await fetchWithTimeout("https://api.mymemory.translated.net/get?" + params.toString(), {}, 4500);
+  const response = await fetchWithRetry("https://api.mymemory.translated.net/get?" + params.toString(), {}, 4500, 2);
   if (!response.ok) throw new Error("Translation provider HTTP " + response.status);
   const data = await response.json();
   if (data.responseStatus !== 200 || !data.responseData?.translatedText) {
@@ -1067,6 +1096,25 @@ async function fetchWithTimeout(url,options={},timeoutMs=5000) {
   const timer=setTimeout(()=>controller.abort("Request timed out"),timeoutMs);
   try{return await fetch(url,{...options,signal:controller.signal});}
   finally{clearTimeout(timer);}
+}
+async function fetchWithRetry(url, options = {}, timeoutMs = 4500, attempts = 2) {
+  let lastError;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const response = await fetchWithTimeout(url, options, timeoutMs);
+      const retryableStatus = response.status === 408 || response.status === 425 ||
+        response.status === 429 || response.status >= 500;
+      if (!retryableStatus || attempt === attempts - 1) return response;
+      const delay = response.status === 429 ? 900 * (attempt + 1) : 300 * (attempt + 1);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    } catch (error) {
+      lastError = error;
+      if (attempt === attempts - 1) throw error;
+      await new Promise(resolve => setTimeout(resolve, 250 * (attempt + 1)));
+    }
+  }
+  if (lastError) throw lastError;
+  throw new Error("Translation provider request failed after retries");
 }
 async function withTimeout(promise,timeoutMs,message) {
   let timer;
