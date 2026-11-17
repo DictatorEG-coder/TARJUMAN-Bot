@@ -622,12 +622,12 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
 
     const apologyPresent = /(?:معلش.{0,35}(?:اتأخرت|تأخرت|تأخر|متأخر)|(?:آسف|اسف|أعتذر|اعتذر|سامحني))/u.test(source);
   const apologyPatterns = {
-    en: /\\b(?:sorry|apolog(?:y|ize|ise|etic)|my apologies|forgive me)\\b/i,
-    fr: /\\b(?:désolé|desole|pardon|excuse-moi|je m'excuse)\\b/i,
-    de: /\\b(?:entschuldigung|tut mir leid|verzeih)\\b/i,
-    es: /\\b(?:lo siento|perdón|perdon|disculpa|discúlpame)\\b/i,
-    it: /\\b(?:mi dispiace|scusa|scusami|perdono)\\b/i,
-    tr: /\\b(?:özür|ozur|kusura bakma|affet)\\b/i,
+    en: /\b(?:sorry|apolog(?:y|ize|ise|etic)|my apologies|forgive me)\b/i,
+    fr: /\b(?:désolé|desole|pardon|excuse-moi|je m'excuse)\b/i,
+    de: /\b(?:entschuldigung|tut mir leid|verzeih)\b/i,
+    es: /\b(?:lo siento|perdón|perdon|disculpa|discúlpame)\b/i,
+    it: /\b(?:mi dispiace|scusa|scusami|perdono)\b/i,
+    tr: /\b(?:özür|ozur|kusura bakma|affet)\b/i,
     ru: /(?:извините|извини|мне жаль|простите)/i,
     ar: /(?:آسف|اسف|أعتذر|اعتذر|سامحني|معلش)/u
   };
@@ -637,12 +637,12 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
 
   const trafficPresent = /(?:زحمة|ازدحام|مزدحم)/u.test(source);
   const trafficPatterns = {
-    en: /\\b(?:traffic|congestion|traffic jam|rush hour)\\b/i,
-    fr: /\\b(?:circulation|embouteillage|bouchons)\\b/i,
-    de: /\\b(?:verkehr|stau)\\b/i,
-    es: /\\b(?:tráfico|trafico|atasco|congestión)\\b/i,
-    it: /\\b(?:traffico|ingorgo)\\b/i,
-    tr: /\\b(?:trafik|sıkışıklık|sikismalik)\\b/i,
+    en: /\b(?:traffic|congestion|traffic jam|rush hour)\b/i,
+    fr: /\b(?:circulation|embouteillage|bouchons)\b/i,
+    de: /\b(?:verkehr|stau)\b/i,
+    es: /\b(?:tráfico|trafico|atasco|congestión)\b/i,
+    it: /\b(?:traffico|ingorgo)\b/i,
+    tr: /\b(?:trafik|sıkışıklık|sikismalik)\b/i,
     ru: /(?:пробка|дорожное движение|затор)/i,
     ar: /(?:زحمة|ازدحام|مزدحم)/u
   };
