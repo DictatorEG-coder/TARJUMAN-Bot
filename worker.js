@@ -344,7 +344,7 @@ async function translateText(text, requestedTarget, env, userId) {
   const containsArabicText = containsArabic(text);
   const detectedSource = detectSourceCode(text) || detectAbbreviationSourceCode(text);
   // Google, LibreTranslate and MyMemory expect ISO language codes (ar), not names (arabic).
-  const source = containsArabicText ? "ar" : "auto";
+  const source = detectedSource || (containsArabicText ? "ar" : "auto");
   const savedLanguage = requestedTarget === "auto" ? await getUserLanguage(env, userId) : null;
   const targetCode = requestedTarget === "auto" ? (savedLanguage || (containsArabicText ? "en" : "ar")) : requestedTarget;
   const languageNames = {
