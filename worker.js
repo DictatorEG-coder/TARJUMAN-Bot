@@ -620,7 +620,37 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     throw new Error("Translation validation failed: source negation may have been omitted");
   }
 
-    const causePresent = /(^|[^\p{L}\p{N}])(?:عشان|علشان|بسبب|لأن|لان)(?=$|[^\p{L}\p{N}])/u.test(source);
+    const apologyPresent = /(?:معلش.{0,35}(?:اتأخرت|تأخرت|تأخر|متأخر)|(?:آسف|اسف|أعتذر|اعتذر|سامحني))/u.test(source);
+  const apologyPatterns = {
+    en: /\\b(?:sorry|apolog(?:y|ize|ise|etic)|my apologies|forgive me)\\b/i,
+    fr: /\\b(?:désolé|desole|pardon|excuse-moi|je m'excuse)\\b/i,
+    de: /\\b(?:entschuldigung|tut mir leid|verzeih)\\b/i,
+    es: /\\b(?:lo siento|perdón|perdon|disculpa|discúlpame)\\b/i,
+    it: /\\b(?:mi dispiace|scusa|scusami|perdono)\\b/i,
+    tr: /\\b(?:özür|ozur|kusura bakma|affet)\\b/i,
+    ru: /(?:извините|извини|мне жаль|простите)/i,
+    ar: /(?:آسف|اسف|أعتذر|اعتذر|سامحني|معلش)/u
+  };
+  if (apologyPresent && apologyPatterns[targetCode] && !apologyPatterns[targetCode].test(result)) {
+    throw new Error("Translation validation failed: source apology may have been omitted");
+  }
+
+  const trafficPresent = /(?:زحمة|ازدحام|مزدحم)/u.test(source);
+  const trafficPatterns = {
+    en: /\\b(?:traffic|congestion|traffic jam|rush hour)\\b/i,
+    fr: /\\b(?:circulation|embouteillage|bouchons)\\b/i,
+    de: /\\b(?:verkehr|stau)\\b/i,
+    es: /\\b(?:tráfico|trafico|atasco|congestión)\\b/i,
+    it: /\\b(?:traffico|ingorgo)\\b/i,
+    tr: /\\b(?:trafik|sıkışıklık|sikismalik)\\b/i,
+    ru: /(?:пробка|дорожное движение|затор)/i,
+    ar: /(?:زحمة|ازدحام|مزدحم)/u
+  };
+  if (trafficPresent && trafficPatterns[targetCode] && !trafficPatterns[targetCode].test(result)) {
+    throw new Error("Translation validation failed: source traffic reference may have been omitted");
+  }
+
+  const causePresent = /(^|[^\p{L}\p{N}])(?:عشان|علشان|بسبب|لأن|لان)(?=$|[^\p{L}\p{N}])/u.test(source);
   const causePatterns = {
     en: /\b(?:because|since|due to|owing to|as a result of)\b/i,
     fr: /\b(?:parce que|car|à cause de|en raison de|puisque)\b/i,
