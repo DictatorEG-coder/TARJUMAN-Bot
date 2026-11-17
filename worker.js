@@ -635,7 +635,7 @@ function assertKeyMeaningMarkersPreserved(sourceText, translatedText, targetCode
     throw new Error("Translation validation failed: source apology may have been omitted");
   }
 
-  const trafficPresent = /(?:زحمة|ازدحام|مزدحم)/u.test(source);
+  const trafficPresent = /(?:زحم|ازدحام|مزدحم)/u.test(source);
   const trafficPatterns = {
     en: /\b(?:traffic|congestion|traffic jam|rush hour)\b/i,
     fr: /\b(?:circulation|embouteillage|bouchons)\b/i,
