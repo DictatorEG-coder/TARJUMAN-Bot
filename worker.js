@@ -63,43 +63,55 @@ export default {
   }
 };
 
-async function handleReactionCommand(message, env) {
+async function handleReactionCommand(message, env, requestedEmoji) {
+  if (!env.OWNER_TELEGRAM_ID || String(message.from?.id) !== String(env.OWNER_TELEGRAM_ID)) {
+    await sendMessage(env, message.chat.id, "هذه الميزة خاصة بصاحب البوت.", {
+      reply_to_message_id: message.message_id
+    });
+    return;
+  }
   const target = message.reply_to_message;
   if (!target) {
-    await sendMessage(env, message.chat.id,
-      "اكتب «تفاعل 👍» ردًا على الرسالة التي تريد التفاعل معها.",
-      { reply_to_message_id: message.message_id }
-    );
+    await sendMessage(env, message.chat.id, "اكتب «تفاعل ❤️» أو أي إيموجي آخر، ردًا على الرسالة التي تريد التفاعل معها.", {
+      reply_to_message_id: message.message_id
+    });
     return;
   }
   if (!["group", "supergroup"].includes(message.chat?.type)) {
-    await sendMessage(env, message.chat.id,
-      "ميزة التفاعل بالأمر متاحة داخل المجموعات فقط.",
-      { reply_to_message_id: message.message_id }
-    );
+    await sendMessage(env, message.chat.id, "ميزة التفاعل بالأمر متاحة داخل المجموعات فقط.", {
+      reply_to_message_id: message.message_id
+    });
+    return;
+  }
+  const emoji = String(requestedEmoji || "").trim();
+  if (!emoji || /\s/u.test(emoji) || emoji.length > 32 ||
+      !/[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(emoji)) {
+    await sendMessage(env, message.chat.id, "حدّد إيموجي واحدًا صالحًا، مثل: تفاعل ❤️ أو تفاعل 🔥 أو تفاعل 😂.", {
+      reply_to_message_id: message.message_id
+    });
     return;
   }
   try {
     await telegramCall(env, "setMessageReaction", {
       chat_id: message.chat.id,
       message_id: target.message_id,
-      reaction: [{ type: "emoji", emoji: "👍" }],
+      reaction: [{ type: "emoji", emoji }],
       is_big: false
     });
   } catch (error) {
     console.error("Telegram reaction failed:", error?.message || error);
-    await sendMessage(env, message.chat.id,
-      "لم أتمكن من وضع التفاعل. تأكد أن 👍 مسموح في المجموعة وأن البوت يستطيع التفاعل مع الرسائل.",
-      { reply_to_message_id: message.message_id }
-    );
+    await sendMessage(env, message.chat.id, "لم أتمكن من وضع هذا التفاعل. تأكد أن الإيموجي مسموح ضمن تفاعلات المجموعة.", {
+      reply_to_message_id: message.message_id
+    });
   }
 }
 
 async function handleMessage(message, env) {
   const commandText = (message.text || message.caption || "").trim();
 
-  if (/^\/?(?:تفاعل|فاعل|react)(?:@\w+)?(?:\s+👍)?$/iu.test(commandText)) {
-    await handleReactionCommand(message, env);
+  const reactionCommand = commandText.match(/^\/?(?:تفاعل|فاعل|react)(?:@\w+)?(?:\s+(.+))?$/iu);
+  if (reactionCommand) {
+    await handleReactionCommand(message, env, reactionCommand[1] || "");
     return;
   }
 
@@ -914,7 +926,7 @@ function languageKeyboard() {
   return {inline_keyboard:rows};
 }
 function helpText() {
-  return "📖 طريقة الاستخدام:\\n\\n1. حدّد لغة الهدف: «ترجم للإنجليزية» أو «ترجم للفرنسية».\\n2. لترجمة رسالة، أرسل الأمر ردًا عليها.\\n3. أو اكتب الأمر ثم النص مباشرة، مثل: «ترجم للألمانية Good morning».\\n4. يمكنك استخدام صيغ قريبة مثل «ترج» و«ترجمان» و«ترجملي».\\n5. لترجمة صورة، أرسل الأمر ردًا عليها مع تحديد اللغة.\\n6. في المجموعات، للتفاعل مع رسالة: رد عليها واكتب «تفاعل 👍».\\n\\nمن زر «اختيار لغة الترجمة» يمكنك حفظ لغة افتراضية إذا رغبت.";
+  return "📖 طريقة الاستخدام:\\n\\n1. حدّد لغة الهدف: «ترجم للإنجليزية» أو «ترجم للفرنسية».\\n2. لترجمة رسالة، أرسل الأمر ردًا عليها.\\n3. أو اكتب الأمر ثم النص مباشرة، مثل: «ترجم للألمانية Good morning».\\n4. يمكنك استخدام صيغ قريبة مثل «ترج» و«ترجمان» و«ترجملي».\\n5. لترجمة صورة، أرسل الأمر ردًا عليها مع تحديد اللغة.\\n6. لصاحب البوت فقط: في المجموعات، رد على رسالة واكتب «تفاعل ❤️» أو «تفاعل 🔥» أو أي إيموجي مسموح.\\n\\nمن زر «اختيار لغة الترجمة» يمكنك حفظ لغة افتراضية إذا رغبت.";
 }
 
 async function getUserLanguage(env,userId) {
