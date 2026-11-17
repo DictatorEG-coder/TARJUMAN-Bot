@@ -236,5 +236,66 @@
     "KIB": "kendine iyi bak",
     "TSK": "teşekkürler",
     "SA": "selamün aleyküm"
+  },
+  "ru": {
+    "СПС": "спасибо",
+    "ПЖ": "пожалуйста",
+    "ПЛИЗ": "пожалуйста",
+    "НЗ": "не за что",
+    "ИМХО": "по моему мнению",
+    "КСТА": "кстати",
+    "ЩА": "сейчас",
+    "ЧЗХ": "что за хрень",
+    "ЛОЛ": "смешно"
+  },
+  "uk": {
+    "ДЯК": "дякую",
+    "ПЖ": "будь ласка",
+    "НЗ": "нема за що",
+    "ІМХО": "на мою думку",
+    "ЛОЛ": "смішно",
+    "ЗРЗ": "зараз"
+  },
+  "pl": {
+    "NWM": "nie wiem",
+    "SPK": "spoko",
+    "ZW": "zaraz wracam",
+    "PZDR": "pozdrawiam",
+    "THX": "dzięki",
+    "BD": "będzie",
+    "NARA": "na razie"
+  },
+  "nl": {
+    "MSS": "misschien",
+    "FF": "even",
+    "W8": "wacht",
+    "IDK": "ik weet het niet",
+    "THX": "bedankt"
+  },
+  "sv": {
+    "MVH": "med vänliga hälsningar",
+    "IAF": "i alla fall",
+    "DVS": "det vill säga",
+    "TACK": "tack"
+  },
+  "id": {
+    "GPP": "tidak apa-apa",
+    "BGT": "banget",
+    "YG": "yang",
+    "DGN": "dengan",
+    "KRN": "karena",
+    "OTW": "sedang dalam perjalanan",
+    "GAK": "tidak",
+    "GA": "tidak",
+    "BTW": "omong-omong"
+  },
+  "vi": {
+    "DC": "được",
+    "KO": "không",
+    "MK": "mình",
+    "BN": "bạn",
+    "NTN": "như thế nào",
+    "IB": "nhắn tin",
+    "K": "không"
   }
 }
