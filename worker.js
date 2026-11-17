@@ -66,6 +66,12 @@ export default {
 async function handleMessage(message, env) {
   const commandText = (message.text || message.caption || "").trim();
 
+  if (/^\/?(?:تفاعل|فاعل)(?:\s+👍)?(?:@\w+)?$/u.test(commandText)) {
+    await handleReactionCommand(message, env);
+    return;
+  }
+
+
   if (/^\/start(?:@\w+)?(?:\s|$)/i.test(commandText)) {
     const firstName = (message.from?.first_name || "صديقي").replace(/[<>]/g, "").slice(0, 60);
     const savedLanguage = await getUserLanguage(env, message.from?.id);
@@ -877,6 +883,7 @@ function languageKeyboard() {
 }
 function helpText() {
   return "📖 طريقة الاستخدام:\n\n1. حدّد لغة الهدف: «ترجم للإنجليزية» أو «ترجم للفرنسية».\n2. لترجمة رسالة، أرسل الأمر ردًا عليها.\n3. أو اكتب الأمر ثم النص مباشرة، مثل: «ترجم للألمانية Good morning».\n4. يمكنك استخدام صيغ قريبة مثل «ترج» و«ترجمان» و«ترجملي».\n5. لترجمة صورة، أرسل الأمر ردًا عليها مع تحديد اللغة.\n\nمن زر «اختيار لغة الترجمة» يمكنك حفظ لغة افتراضية إذا رغبت.";
+  text += "\\n\\n👍 للتفاعل مع رسالة في المجموعة: رد عليها واكتب «تفاعل 👍».";
 }
 async function getUserLanguage(env,userId) {
   if(!userId||!env.USER_SETTINGS)return null;
