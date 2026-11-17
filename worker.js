@@ -327,6 +327,11 @@ async function translateText(text, requestedTarget, env, userId) {
   if (detectedSource && detectedSource === targetCode) return text.trim();
   const quick = quickPhraseTranslation(text, targetCode);
   if (quick) return quick;
+  const expandedWholeText = expandChatAbbreviations(text, detectedSource);
+  const expandedQuick = expandedWholeText !== text
+    ? quickPhraseTranslation(expandedWholeText, targetCode)
+    : null;
+  if (expandedQuick) return expandedQuick;
   const translated = [];
   for (const chunk of splitUtf8(text, 1100)) {
     const failures = [];
@@ -454,12 +459,9 @@ function prepareEngineGlossary(sourceText, targetCode) {
 function expandChatAbbreviations(text, sourceCode) {
   if (sourceCode !== "en") return text;
   const dictionary = chatAbbreviations?.en || {};
-  const safeKeys = [
-    "ASAP", "BTW", "BRB", "FYI", "IDK", "IMO", "IMHO", "TBH", "TTYL",
-    "OMG", "OMW", "NVM", "LMK", "WYD", "WBU", "HBU", "PLS", "THX",
-    "TY", "GTG", "G2G", "AFK", "JK", "IRL"
-  ];
-  const keys = safeKeys.filter(key => dictionary[key]);
+  const keys = Object.keys(dictionary)
+    .filter(key => /^[A-Z0-9]{2,8}$/.test(key))
+    .sort((a, b) => b.length - a.length);
   if (!keys.length) return text;
   const pattern = new RegExp("(^|[^A-Za-z0-9])(" + keys.join("|") + ")(?=$|[^A-Za-z0-9])", "gi");
   return text.replace(pattern, (match, before, acronym) =>
