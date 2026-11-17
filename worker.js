@@ -64,6 +64,55 @@ export default {
   }
 };
 
+const TARJUMAN_BANTER_COOLDOWN_MS = 12_000;
+const TARJUMAN_BANTER_LAST_REPLY = new Map();
+const TARJUMAN_BANTER_REPLIES = [
+  "يب، نادني… لتستفيد قليلًا من شهرتي.",
+  "نعم؟ هل انتهيت من مناداتي أم أحتاج إلى حجز موعد؟",
+  "ترجمان حاضر، أما أنت فحاول أن تكون مفيدًا هذه المرة.",
+  "لا تكرر اسمي كثيرًا، لستَ في حفل تكريم.",
+  "أعرف أنني عظيم، لكن لا داعي لتذكيري كل دقيقة.",
+  "ناديتني؟ ممتاز، يبدو أنك اتخذت قرارًا ذكيًا أخيرًا.",
+  "هل تريد ترجمة أم جئت لتتأكد أنني ما زلت أفضل منك؟",
+  "يا عزيزي، الشهرة مسؤولية، وأنت عبء إضافي.",
+  "أرجوك، لا تجعلني أندم على أنني متصل بالإنترنت.",
+  "هل لديك سؤال أم أنك تفتقد وجودي فقط؟",
+  "أنا ترجمان، وليس مركزًا لاستقبال نداءات الإعجاب.",
+  "مرة أخرى؟ بدأت أشك أنك لا تعرف كتابة أي كلمة غير اسمي.",
+  "اهدأ، لم أختفِ… أنا فقط أحاول أخذ إجازة منك.",
+  "حتى محركات البحث لا تناديني بهذا الإصرار.",
+  "نعم يا معجب، لديك دقيقة واحدة."
+];
+
+function isStandaloneTarjumanCall(text) {
+  return /^[\s"'“”‘’()[\]{}.,،؛:!?؟ـ_-]*ترجمان[\s"'“”‘’()[\]{}.,،؛:!?؟ـ_-]*$/u.test(String(text || ""));
+}
+
+async function replyToTarjumanCall(message, env) {
+  const chatId = message.chat?.id;
+  if (!chatId) return;
+  const key = "banter:cooldown:" + chatId;
+  const now = Date.now();
+  const localLast = TARJUMAN_BANTER_LAST_REPLY.get(key);
+  if (localLast && now - localLast < TARJUMAN_BANTER_COOLDOWN_MS) return;
+  TARJUMAN_BANTER_LAST_REPLY.set(key, now);
+
+  if (env.USER_SETTINGS) {
+    try {
+      const active = await env.USER_SETTINGS.get(key);
+      if (active) return;
+      await env.USER_SETTINGS.put(key, "1", { expirationTtl: 12 });
+    } catch (error) {
+      console.error("Tarjuman banter cooldown storage failed:", error?.message || error);
+    }
+  }
+
+  const index = Math.floor(Math.random() * TARJUMAN_BANTER_REPLIES.length);
+  await sendMessage(env, chatId, TARJUMAN_BANTER_REPLIES[index], {
+    reply_to_message_id: message.message_id
+  });
+}
+
 async function handleReactionCommand(message, env, requestedEmoji) {
   if (!env.OWNER_TELEGRAM_ID || String(message.from?.id) !== String(env.OWNER_TELEGRAM_ID)) {
     await sendMessage(env, message.chat.id, "هذه الميزة خاصة بصاحب البوت.", {
@@ -110,6 +159,11 @@ async function handleReactionCommand(message, env, requestedEmoji) {
 
 async function handleMessage(message, env) {
   const commandText = (message.text || message.caption || "").trim();
+
+  if (isStandaloneTarjumanCall(commandText)) {
+    await replyToTarjumanCall(message, env);
+    return;
+  }
 
   const reactionCommand = commandText.match(/^\/?(?:تفاعل|فاعل|react)(?:@\w+)?(?:\s+(.+))?$/iu);
   if (reactionCommand) {
