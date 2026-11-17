@@ -503,11 +503,11 @@ function normalizeArabicColloquial(text) {
 
 function detectAbbreviationSourceCode(text) {
   const input = String(text || "");
-  for (const sourceCode of ["en","fr","es","de","it","pt","tr"]) {
+  for (const sourceCode of ["en","fr","es","de","it","pt","tr","ru","uk","pl","nl","sv","id","vi"]) {
     const dictionary = chatAbbreviations?.[sourceCode] || {};
-    const keys = Object.keys(dictionary).filter(key => /^[A-Z0-9]{2,8}$/.test(key));
+    const keys = Object.keys(dictionary).filter(key => /^[\\p{L}\\p{N}]{2,10}$/u.test(key));
     if (!keys.length) continue;
-    const pattern = new RegExp("(^|[^A-Za-z0-9])(?:" + keys.join("|") + ")(?=$|[^A-Za-z0-9])", "i");
+    const pattern = new RegExp("(^|[^\\\\p{L}\\\\p{N}])(?:" + keys.join("|") + ")(?=$|[^\\\\p{L}\\\\p{N}])", "iu");
     if (pattern.test(input)) return sourceCode;
   }
   return null;
@@ -517,12 +517,12 @@ function expandChatAbbreviations(text, sourceCode) {
   if (!sourceCode) return text;
   const dictionary = chatAbbreviations?.[sourceCode] || {};
   const keys = Object.keys(dictionary)
-    .filter(key => /^[A-Z0-9]{2,8}$/.test(key))
+    .filter(key => /^[\\p{L}\\p{N}]{2,10}$/u.test(key))
     .sort((a, b) => b.length - a.length);
   if (!keys.length) return text;
-  const pattern = new RegExp("(^|[^A-Za-z0-9])(" + keys.join("|") + ")(?=$|[^A-Za-z0-9])", "gi");
+  const pattern = new RegExp("(^|[^\\\\p{L}\\\\p{N}])(" + keys.join("|") + ")(?=$|[^\\\\p{L}\\\\p{N}])", "giu");
   return text.replace(pattern, (match, before, acronym) =>
-    before + dictionary[acronym.toUpperCase()]);
+    before + (dictionary[acronym.toUpperCase()] || dictionary[acronym.toLowerCase()] || dictionary[acronym]));
 }
 
 function normalizePhraseKey(value) {
