@@ -28,3 +28,12 @@ This folder tracks redistributable language resources considered for TARJUMAN. L
 - Arabic→French and Arabic→English common conversational phrases.
 - English→French and English→Arabic common conversational phrases.
 - More language pairs should be added only from verified, licensed translations and tested examples.
+
+## Additional verified Arabic-English corpora
+
+- [English–Egyptian Arabic MT560](https://huggingface.co/datasets/michsethowusu/english-egyptian-arabic_sentence-pairs_mt560): 54,590 parallel sentence pairs, about 9.22 MB, CC BY 4.0. This is a compact candidate for a curated Egyptian Arabic/English phrase-memory import. Retain source attribution and the original OPUS MT560 citation.
+- [IbrahimAmin/arz-en-parallel-corpus](https://huggingface.co/datasets/IbrahimAmin/arz-en-parallel-corpus): approximately 27,000 cleaned Egyptian Arabic–English aligned sentence pairs, MIT license according to its dataset card. Verify the underlying source metadata before combining or redistributing.
+- [Egyptian Arabic-English Parallel Corpus](https://huggingface.co/datasets/Mo-Abdalkader/Egyptian-Arabic-English-Parallel-Corpus): 404,010 samples / 1,051,924 sentences, around 448 MB, CC BY 4.0. Keep as an external corpus for offline evaluation/curation; do not commit the full binary into this Worker repository.
+- [Tatoeba downloads](https://tatoeba.org/en/downloads): custom sentence-pair exports and weekly multilingual dumps. Main sentence data is CC BY 2.0 FR, with some CC0 records; sentence/audio metadata and attribution must be preserved.
+
+These are corpus resources, not complete dictionaries. A corpus must be cleaned, deduplicated, language-tagged, and tested before phrase lookup. The production Worker currently has no R2/D1 corpus binding; therefore these large files are not yet deployed as a live searchable database.
