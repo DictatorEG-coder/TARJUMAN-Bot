@@ -113,7 +113,8 @@
       "ممكن تستنى شوية": "Could you wait a little?",
       "هكلمك بعدين": "I'll talk to you later.",
       "أنا مشغول دلوقتي": "I'm busy right now.",
-      "مش هقدر أجي النهارده": "I won't be able to come today."
+      "مش هقدر أجي النهارده": "I won't be able to come today.",
+      "مش هقدر أجي النهارده بسبب الزحمة": "I won't be able to come today because of the traffic."
     }
   },
   "en": {
@@ -197,6 +198,16 @@
       "the traffic was heavy": "كانت حركة المرور مزدحمة.",
       "i'm sorry i'm late": "آسف على تأخري.",
       "brb, i will talk to you later": "سأعود حالًا، وسأتحدث معك لاحقًا."
+    }
+  },
+  "fr": {
+    "ar": {
+      "mort de rire je ne sais pas": "أموت من الضحك، لا أعرف."
+    }
+  },
+  "sl": {
+    "fr": {
+      "dobro jutro kako si": "Bonjour, comment vas-tu ?"
     }
   }
 }
