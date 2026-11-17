@@ -28,9 +28,11 @@ assert.equal(
   "أعتذر لأنني تأخرت عليك بسبب الازدحام المروري"
 );
 assert.equal(runtime.expandChatAbbreviations("معلش", "ar"), "معلش");
+assert.equal(runtime.quickPhraseTranslation("مش هقدر أجي النهارده بسبب الزحمة", "en"), "I won't be able to come today because of the traffic.");
 
 assert.equal(runtime.detectAbbreviationSourceCode("MDR"), "fr");
 assert.equal(runtime.expandChatAbbreviations("MDR", "fr"), "mort de rire");
+assert.equal(runtime.quickPhraseTranslation("mort de rire, je ne sais pas", "ar", "fr"), "أموت من الضحك، لا أعرف.");
 assert.equal(runtime.detectAbbreviationSourceCode("СПС"), "ru");
 assert.equal(runtime.expandChatAbbreviations("СПС", "ru"), "спасибо");
 assert.equal(runtime.detectSourceCode("ДЯК"), "uk");
@@ -52,6 +54,8 @@ const slovenian = "ترجم V francoščini: Dobro jutro, kako si?";
 const slovenianParsed = runtime.parseCommand(slovenian);
 assert.equal(slovenianParsed.target, "fr");
 assert.equal(runtime.removeCommandPrefix(slovenian, slovenianParsed), "Dobro jutro, kako si?");
+assert.equal(runtime.detectSourceCode("Dobro jutro, kako si?"), "sl");
+assert.equal(runtime.quickPhraseTranslation("Dobro jutro, kako si?", "fr"), "Bonjour, comment vas-tu ?");
 
 const englishCommand = "Translate to French: I will call you later";
 const englishParsed = runtime.parseCommand(englishCommand);
