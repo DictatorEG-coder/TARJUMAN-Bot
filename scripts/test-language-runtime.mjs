@@ -16,6 +16,8 @@ const load = new Function("phrasebook", "chatAbbreviations", "arabicDialect",
 );
 const runtime = load(phrasebook, chatAbbreviations, arabicDialect);
 
+assert.equal(runtime.quickPhraseTranslation("TRUST NO ONE", "ar"), "لا تثق بأحد.");
+assert.equal(runtime.quickPhraseTranslation("TRUST NO ONE", "fr"), "Ne fais confiance à personne.");
 assert.equal(runtime.isStandaloneTarjumanCall("ترجمان"), true);
 assert.equal(runtime.isStandaloneTarjumanCall(" ترجمان! "), true);
 assert.equal(runtime.isStandaloneTarjumanCall("ترجمان من فضلك"), false);
