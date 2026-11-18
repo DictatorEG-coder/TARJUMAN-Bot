@@ -1,5 +1,5 @@
 import { mkdir, writeFile, rm } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { gunzipSync, unzipSync } from "fflate";
 
@@ -96,11 +96,20 @@ async function main() {
       }
     }
 
-    const attribution = Object.entries(archive).find(([path]) =>
+    const notices = Object.entries(archive).filter(([path]) =>
       /(?:ATTRIBUTION|LICENSE|README\.txt)$/i.test(path)
     );
-    if (attribution) {
-      await writeFile(join(pairDir, "ATTRIBUTION.txt"), attribution[1], "utf8");
+    for (const [noticePath, noticeBytes] of notices) {
+      const name = basename(noticePath);
+      const localPath = join(pairDir, name);
+      await writeFile(localPath, noticeBytes);
+      if (upload) {
+        execFileSync("npx", [
+          "wrangler", "r2", "object", "put",
+          `${BUCKET}/dictionary/v1/${pair}/legal/${name}`,
+          `--file=${localPath}`, "--remote", "--content-type=text/plain"
+        ], { stdio: "inherit" });
+      }
     }
     total += parsed.count;
     console.log(`${pair}: ${parsed.count.toLocaleString()} entries in ${parsed.shards.size} shards`);
