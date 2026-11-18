@@ -893,11 +893,13 @@ const DICTIONARY_SHARD_CACHE = new Map();
 
 async function getDictionaryGlossaryHints(sourceText, sourceCode, targetCode, env) {
   if (!env.TRANSLATION_DICTIONARIES || !sourceCode || !targetCode) return "";
-  const pair = sourceCode + "-" + targetCode;
+  const resolvedSource = sourceCode || (targetCode === "ar" && !containsArabic(sourceText) ? "en" : null);
+  if (!resolvedSource) return "";
+  const pair = resolvedSource + "-" + targetCode;
   // First production packs: large, attributed Arabic↔English dictionaries.
   if (pair !== "ar-en" && pair !== "en-ar") return "";
 
-  const words = [...new Set((String(sourceText || "").match(/[\\p{L}]+/gu) || [])
+  const words = [...new Set((String(sourceText || "").match(/[\p{L}]+/gu) || [])
     .map(word => word.toLocaleLowerCase().normalize("NFC"))
     .filter(word => [...word].length >= 2 && [...word].length <= 32))]
     .slice(0, 18);
