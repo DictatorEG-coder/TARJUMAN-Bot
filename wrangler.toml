@@ -7,3 +7,7 @@ enabled = true
 
 [ai]
 binding = "AI"
+
+[[r2_buckets]]
+binding = "TRANSLATION_DICTIONARIES"
+bucket_name = "tarjuman-dictionaries"
