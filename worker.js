@@ -892,7 +892,7 @@ function getGlossaryHints(sourceText, targetCode) {
 const DICTIONARY_SHARD_CACHE = new Map();
 
 async function getDictionaryGlossaryHints(sourceText, sourceCode, targetCode, env) {
-  if (!env.TRANSLATION_DICTIONARIES || !sourceCode || !targetCode) return "";
+  if (!env.TRANSLATION_DICTIONARIES || !targetCode) return "";
   const resolvedSource = sourceCode || (targetCode === "ar" && !containsArabic(sourceText) ? "en" : null);
   if (!resolvedSource) return "";
   const pair = resolvedSource + "-" + targetCode;
