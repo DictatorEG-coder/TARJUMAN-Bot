@@ -29,6 +29,10 @@ function decodeHtml(value) {
     .trim();
 }
 
+function normalizeDictionaryWord(value) {
+  return String(value || "").normalize("NFC").replace(/[\\u064B-\\u065F\\u0670ـ]/gu, "").toLocaleLowerCase();
+}
+
 function firstLetterKey(word) {
   const first = [...word.normalize("NFC").toLocaleLowerCase()][0] || "_";
   return first.codePointAt(0).toString(16);
@@ -54,7 +58,7 @@ function parseStarDict(pair, files) {
     const start = cursor;
     while (cursor < index.length && index[cursor] !== 0) cursor++;
     if (cursor >= index.length || cursor + 9 > index.length) break;
-    const word = decoder.decode(index.subarray(start, cursor)).trim().toLocaleLowerCase();
+    const word = normalizeDictionaryWord(decoder.decode(index.subarray(start, cursor)).trim());
     cursor++;
     const offset = view.getUint32(cursor, false);
     const size = view.getUint32(cursor + 4, false);
