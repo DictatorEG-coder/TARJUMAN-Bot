@@ -12,7 +12,7 @@ source = source
   .replace(/^import arabicDialect from .*;\s*$/m, "")
   .replace("export default {", "const worker = {");
 const load = new Function("phrasebook", "chatAbbreviations", "arabicDialect",
-  source + "\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode, assertKeyMeaningMarkersPreserved, isStandaloneTarjumanCall, TARJUMAN_BANTER_REPLIES };"
+  source + "\nreturn { parseCommand, removeCommandPrefix, normalizeArabicColloquial, expandChatAbbreviations, detectAbbreviationSourceCode, quickPhraseTranslation, detectSourceCode, assertKeyMeaningMarkersPreserved, isStandaloneTarjumanCall, TARJUMAN_BANTER_REPLIES, getDictionaryGlossaryHints };"
 );
 const runtime = load(phrasebook, chatAbbreviations, arabicDialect);
 
@@ -79,5 +79,19 @@ assert.equal(runtime.removeCommandPrefix(englishCommand, englishParsed), "I will
 
 const nativeChinese = "ترجم 中文 你好";
 assert.equal(runtime.parseCommand(nativeChinese).target, "zh-CN");
+
+const dictionaryHints = await runtime.getDictionaryGlossaryHints("trust no one", "en", "ar", {
+  TRANSLATION_DICTIONARIES: {
+    async get(key) {
+      assert.equal(key, "dictionary/v1/en-ar/74.json");
+      return { async text() { return JSON.stringify({ trust: "confidence in the honesty of a person" }); } };
+    }
+  }
+});
+assert.match(dictionaryHints, /trust/);
+assert.match(dictionaryHints, /confidence in the honesty/);
+assert.equal(await runtime.getDictionaryGlossaryHints("trust", "en", "fr", {
+  TRANSLATION_DICTIONARIES: { async get() { throw new Error("unsupported pair must not read R2"); } }
+}), "");
 
 console.log("Language runtime regression tests passed: abbreviations, dialect normalization, phrase memory, and multilingual command parsing.");
