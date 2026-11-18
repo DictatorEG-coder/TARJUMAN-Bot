@@ -590,15 +590,19 @@ function normalizePhraseKey(value) {
 }
 
 function quickPhraseTranslation(text, targetCode, sourceHint = null) {
-  const sourceCode = sourceHint || detectSourceCode(text) || (containsArabic(text) ? "ar" : null);
-  if (!sourceCode) return null;
-  const dictionary = phrasebook?.[sourceCode]?.[targetCode];
-  if (!dictionary) return null;
+  const detected = sourceHint || detectSourceCode(text) || (containsArabic(text) ? "ar" : null);
+  const sourceCodes = detected ? [detected] : Object.keys(phrasebook || {});
   const normalizedInput = normalizePhraseKey(text);
-  for (const [phrase, translation] of Object.entries(dictionary)) {
-    if (normalizePhraseKey(phrase) === normalizedInput) return translation;
+  const matches = [];
+  for (const sourceCode of sourceCodes) {
+    const dictionary = phrasebook?.[sourceCode]?.[targetCode];
+    if (!dictionary) continue;
+    for (const [phrase, translation] of Object.entries(dictionary)) {
+      if (normalizePhraseKey(phrase) === normalizedInput) matches.push(translation);
+    }
   }
-  return null;
+  const uniqueMatches = [...new Set(matches)];
+  return uniqueMatches.length === 1 ? uniqueMatches[0] : null;
 }
 
 function assertTranslationLooksValid(sourceText, translatedText, targetCode) {
