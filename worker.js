@@ -900,7 +900,7 @@ async function getDictionaryGlossaryHints(sourceText, sourceCode, targetCode, en
   if (pair !== "ar-en" && pair !== "en-ar") return "";
 
   const words = [...new Set((String(sourceText || "").match(/[\p{L}]+/gu) || [])
-    .map(word => word.normalize("NFC").replace(/[\\u064B-\\u065F\\u0670ـ]/gu, "").toLocaleLowerCase())
+    .map(word => word.normalize("NFC").replace(/[\u064B-\u065F\u0670ـ]/gu, "").toLocaleLowerCase())
     .filter(word => [...word].length >= 2 && [...word].length <= 32))]
     .slice(0, 18);
   if (!words.length) return "";
