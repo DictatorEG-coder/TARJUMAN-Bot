@@ -7,9 +7,12 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test:data": "node scripts/validate-language-data.mjs && node scripts/test-language-runtime.mjs",
-    "test:runtime": "node scripts/test-language-runtime.mjs"
+    "test:runtime": "node scripts/test-language-runtime.mjs",
+    "import:dictionaries": "node scripts/import-dictionaries.mjs",
+    "upload:dictionaries": "node scripts/import-dictionaries.mjs --upload"
   },
   "devDependencies": {
+    "fflate": "^0.8.2",
     "wrangler": "^4.0.0"
   }
 }
