@@ -120,6 +120,7 @@
   },
   "en": {
     "fr": {
+      "trust no one": "Ne fais confiance à personne.",
       "good morning": "Bonjour.",
       "good afternoon": "Bon après-midi.",
       "good evening": "Bonsoir.",
@@ -163,6 +164,7 @@
       "brb, i will talk to you later": "Je reviens tout de suite. Je te parlerai plus tard."
     },
     "ar": {
+      "trust no one": "لا تثق بأحد.",
       "good morning": "صباح الخير.",
       "good afternoon": "مساء الخير.",
       "good evening": "مساء الخير.",
