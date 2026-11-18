@@ -30,7 +30,7 @@ function decodeHtml(value) {
 }
 
 function normalizeDictionaryWord(value) {
-  return String(value || "").normalize("NFC").replace(/[\\u064B-\\u065F\\u0670ـ]/gu, "").toLocaleLowerCase();
+  return String(value || "").normalize("NFC").replace(/[\u064B-\u065F\u0670ـ]/gu, "").toLocaleLowerCase();
 }
 
 function firstLetterKey(word) {
